@@ -1,0 +1,11 @@
+pkname="models"
+output="db/models"
+[psql]
+  dbname = "dynamic_novel"
+  host   = "db"
+  port   = 5432
+  user   = "postgres"
+  pass   = "pass"
+  sslmode = "disable"
+  schema = "public"
+  blacklist = ["migrations", "other"]
