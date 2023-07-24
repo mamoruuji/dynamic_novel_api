@@ -1,8 +1,8 @@
 syntax = "proto3";
 
-option go_package = "github.com/amomon/dynamic_novel_api/api/dynamic";
+option go_package = "github.com/amomon/dynamic_novel_api/gen/api/proto/dynamic/v1;dynamicv1";
 
-package dynamic;
+package api.proto.dynamic.v1;
 
 message DynamicData {
   int32 id = 1;
@@ -42,7 +42,7 @@ message UpdateDynamicStatusRequest {
 
 message UpdateDynamicStatusResponse {}
 
-service Dynamic {
+service DynamicService {
   rpc GetDynamics(GetDynamicsRequest) returns (GetDynamicsResponse) {}
   rpc AddDynamic(AddDynamicRequest) returns (AddDynamicResponse) {}
   rpc DeleteDynamic(DeleteDynamicRequest) returns (DeleteDynamicResponse) {}
