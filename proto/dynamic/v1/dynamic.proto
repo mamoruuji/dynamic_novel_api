@@ -1,11 +1,11 @@
 syntax = "proto3";
 
-option go_package = "github.com/amomon/dynamic_novel_api/gen/api/proto/dynamic/v1;dynamicv1";
+option go_package = "github.com/amomon/dynamic_novel_api/gen/proto/dynamic/v1;dynamicv1";
 
-package api.proto.dynamic.v1;
+package proto.dynamic.v1;
 
 message DynamicData {
-  int32 id = 1;
+  int32 dynamic_id = 1;
   string title = 2;
   string overview = 3;
   string user_id = 4;
@@ -24,17 +24,17 @@ message AddDynamicRequest {
 }
 
 message AddDynamicResponse {
-  int32 id = 1;
+  int32 dynamic_id = 1;
 }
 
 message DeleteDynamicRequest {
-  int32 id = 1;
+  int32 dynamic_id = 1;
 }
 
 message DeleteDynamicResponse {}
 
 message UpdateDynamicStatusRequest {
-  int32 id = 1;
+  int32 dynamic_id = 1;
   string title = 2;
   string overview = 3;
   bool published = 4;
