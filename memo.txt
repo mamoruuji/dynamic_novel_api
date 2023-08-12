@@ -9,7 +9,19 @@ buf generate
 go run ./cmd/main.go
 
 // // 別ターミナルから実行
-grpcurl \
--protoset <(buf build -o -) -plaintext \
--d '{}' \
-localhost:8080 api.proto.dynamic.v1.DynamicService/GetDynamics
+
+curl \
+--header "Content-Type: application/json" \
+--data '{}' \
+http://localhost:8080/proto.dynamic.v1.DynamicService/GetDynamics
+
+
+
+curl \
+--header "Content-Type: application/json" \
+--data '{}' \
+http://127.0.0.1:8080/proto.dynamic.v1.DynamicService/GetDynamics
+
+go mod vendor
+
+
