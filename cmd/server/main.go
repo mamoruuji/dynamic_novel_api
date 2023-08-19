@@ -6,6 +6,8 @@ import (
 	"log"
 	"net/http"
 
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	"github.com/amomon/dynamic_novel_api/db/models"
 	_ "github.com/lib/pq"
 
@@ -25,7 +27,14 @@ type dynamicServer struct {
 	dynamicv1connect.DynamicServiceHandler
 }
 
-func (s *dynamicServer) ListDynamics(ctx context.Context, _ *connect.Request[dynamicv1.ListDynamicsRequest]) (*connect.Response[dynamicv1.ListDynamicsResponse], error) {
+type pageServer struct {
+	dynamicv1connect.PageServiceHandler
+}
+
+func (s *dynamicServer) ListDynamics(
+	ctx context.Context,
+	_ *connect.Request[dynamicv1.ListDynamicsRequest],
+) (*connect.Response[dynamicv1.ListDynamicsResponse], error) {
 	dynamics, err := models.Dynamics().All(ctx, boil.GetContextDB())
 	if err != nil {
 		log.Printf("failed to get dynamics: %v", err)
@@ -35,12 +44,16 @@ func (s *dynamicServer) ListDynamics(ctx context.Context, _ *connect.Request[dyn
 	var pbDynamics []*dynamicv1.DynamicData
 	for _, d := range dynamics {
 		dynamicID := int32(d.DynamicID)
+		createdAT := timestamppb.New(d.CreatedAt)
+		updatedAT := timestamppb.New(d.UpdatedAt)
 		pbDynamic := &dynamicv1.DynamicData{
 			DynamicId: dynamicID,
 			Title:     d.Title,
 			Overview:  d.Overview,
 			UserId:    d.UserID,
 			Published: d.Published,
+			CreatedAt: createdAT,
+			UpdatedAt: updatedAT,
 		}
 		pbDynamics = append(pbDynamics, pbDynamic)
 	}
@@ -52,7 +65,41 @@ func (s *dynamicServer) ListDynamics(ctx context.Context, _ *connect.Request[dyn
 	return res, nil
 }
 
-func (s *dynamicServer) AddDynamic(ctx context.Context, req *connect.Request[dynamicv1.AddDynamicRequest]) (*connect.Response[dynamicv1.AddDynamicResponse], error) {
+func (s *pageServer) ListPages(
+	ctx context.Context,
+	_ *connect.Request[dynamicv1.ListPagesRequest],
+) (*connect.Response[dynamicv1.ListPagesResponse], error) {
+	pages, err := models.Pages().All(ctx, boil.GetContextDB())
+	if err != nil {
+		log.Printf("failed to get dynamics: %v", err)
+		return nil, err
+	}
+
+	var pbPages []*dynamicv1.PageData
+	for _, p := range pages {
+		pageID := int32(p.PageID)
+		order := int32(p.Order)
+		chapterID := int32(p.ChapterID)
+		pbPage := &dynamicv1.PageData{
+			PageId:    pageID,
+			Title:     p.Title,
+			Order:     order,
+			ChapterId: chapterID,
+		}
+		pbPages = append(pbPages, pbPage)
+	}
+
+	res := connect.NewResponse(&dynamicv1.ListPagesResponse{
+		Pages: pbPages,
+	})
+
+	return res, nil
+}
+
+func (s *dynamicServer) AddDynamic(
+	ctx context.Context,
+	req *connect.Request[dynamicv1.AddDynamicRequest],
+) (*connect.Response[dynamicv1.AddDynamicResponse], error) {
 	d := models.Dynamic{
 		Title:     req.Msg.Title,
 		UserID:    req.Msg.UserId,
@@ -72,7 +119,10 @@ func (s *dynamicServer) AddDynamic(ctx context.Context, req *connect.Request[dyn
 	return res, nil
 }
 
-func (s *dynamicServer) DeleteDynamic(ctx context.Context, req *connect.Request[dynamicv1.DeleteDynamicRequest]) (*connect.Response[dynamicv1.DeleteDynamicResponse], error) {
+func (s *dynamicServer) DeleteDynamic(
+	ctx context.Context,
+	req *connect.Request[dynamicv1.DeleteDynamicRequest],
+) (*connect.Response[dynamicv1.DeleteDynamicResponse], error) {
 	dynamicID := int(req.Msg.DynamicId)
 	d := models.Dynamic{
 		DynamicID: dynamicID,
@@ -87,7 +137,10 @@ func (s *dynamicServer) DeleteDynamic(ctx context.Context, req *connect.Request[
 	return connect.NewResponse(&dynamicv1.DeleteDynamicResponse{}), nil
 }
 
-func (s *dynamicServer) UpdateDynamicStatus(ctx context.Context, req *connect.Request[dynamicv1.UpdateDynamicStatusRequest]) (*connect.Response[dynamicv1.UpdateDynamicStatusResponse], error) {
+func (s *dynamicServer) UpdateDynamicStatus(
+	ctx context.Context,
+	req *connect.Request[dynamicv1.UpdateDynamicStatusRequest],
+) (*connect.Response[dynamicv1.UpdateDynamicStatusResponse], error) {
 	dynamicID := int(req.Msg.DynamicId)
 	d := models.Dynamic{
 		DynamicID: dynamicID,
@@ -108,6 +161,8 @@ func (s *dynamicServer) UpdateDynamicStatus(ctx context.Context, req *connect.Re
 func server() http.Handler {
 	mux := http.NewServeMux()
 	path, handler := dynamicv1connect.NewDynamicServiceHandler(&dynamicServer{})
+	mux.Handle(path, handler)
+	path, handler = dynamicv1connect.NewPageServiceHandler(&pageServer{})
 	mux.Handle(path, handler)
 	return mux
 }

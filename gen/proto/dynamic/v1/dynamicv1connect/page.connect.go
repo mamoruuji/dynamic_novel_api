@@ -46,8 +46,7 @@ const (
 
 // PageServiceClient is a client for the proto.dynamic.v1.PageService service.
 type PageServiceClient interface {
-	// rpc ListPages(GetPagesRequest) returns (GetPagesResponse) {}
-	ListPages(context.Context, *connect_go.Request[v1.GetPagesRequest]) (*connect_go.Response[v1.GetPagesResponse], error)
+	ListPages(context.Context, *connect_go.Request[v1.ListPagesRequest]) (*connect_go.Response[v1.ListPagesResponse], error)
 	AddPage(context.Context, *connect_go.Request[v1.AddPageRequest]) (*connect_go.Response[v1.AddPageResponse], error)
 	DeletePage(context.Context, *connect_go.Request[v1.DeletePageRequest]) (*connect_go.Response[v1.DeletePageResponse], error)
 	UpdatePageStatus(context.Context, *connect_go.Request[v1.UpdatePageStatusRequest]) (*connect_go.Response[v1.UpdatePageStatusResponse], error)
@@ -63,7 +62,7 @@ type PageServiceClient interface {
 func NewPageServiceClient(httpClient connect_go.HTTPClient, baseURL string, opts ...connect_go.ClientOption) PageServiceClient {
 	baseURL = strings.TrimRight(baseURL, "/")
 	return &pageServiceClient{
-		listPages: connect_go.NewClient[v1.GetPagesRequest, v1.GetPagesResponse](
+		listPages: connect_go.NewClient[v1.ListPagesRequest, v1.ListPagesResponse](
 			httpClient,
 			baseURL+PageServiceListPagesProcedure,
 			opts...,
@@ -88,14 +87,14 @@ func NewPageServiceClient(httpClient connect_go.HTTPClient, baseURL string, opts
 
 // pageServiceClient implements PageServiceClient.
 type pageServiceClient struct {
-	listPages        *connect_go.Client[v1.GetPagesRequest, v1.GetPagesResponse]
+	listPages        *connect_go.Client[v1.ListPagesRequest, v1.ListPagesResponse]
 	addPage          *connect_go.Client[v1.AddPageRequest, v1.AddPageResponse]
 	deletePage       *connect_go.Client[v1.DeletePageRequest, v1.DeletePageResponse]
 	updatePageStatus *connect_go.Client[v1.UpdatePageStatusRequest, v1.UpdatePageStatusResponse]
 }
 
 // ListPages calls proto.dynamic.v1.PageService.ListPages.
-func (c *pageServiceClient) ListPages(ctx context.Context, req *connect_go.Request[v1.GetPagesRequest]) (*connect_go.Response[v1.GetPagesResponse], error) {
+func (c *pageServiceClient) ListPages(ctx context.Context, req *connect_go.Request[v1.ListPagesRequest]) (*connect_go.Response[v1.ListPagesResponse], error) {
 	return c.listPages.CallUnary(ctx, req)
 }
 
@@ -116,8 +115,7 @@ func (c *pageServiceClient) UpdatePageStatus(ctx context.Context, req *connect_g
 
 // PageServiceHandler is an implementation of the proto.dynamic.v1.PageService service.
 type PageServiceHandler interface {
-	// rpc ListPages(GetPagesRequest) returns (GetPagesResponse) {}
-	ListPages(context.Context, *connect_go.Request[v1.GetPagesRequest]) (*connect_go.Response[v1.GetPagesResponse], error)
+	ListPages(context.Context, *connect_go.Request[v1.ListPagesRequest]) (*connect_go.Response[v1.ListPagesResponse], error)
 	AddPage(context.Context, *connect_go.Request[v1.AddPageRequest]) (*connect_go.Response[v1.AddPageResponse], error)
 	DeletePage(context.Context, *connect_go.Request[v1.DeletePageRequest]) (*connect_go.Response[v1.DeletePageResponse], error)
 	UpdatePageStatus(context.Context, *connect_go.Request[v1.UpdatePageStatusRequest]) (*connect_go.Response[v1.UpdatePageStatusResponse], error)
@@ -168,7 +166,7 @@ func NewPageServiceHandler(svc PageServiceHandler, opts ...connect_go.HandlerOpt
 // UnimplementedPageServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedPageServiceHandler struct{}
 
-func (UnimplementedPageServiceHandler) ListPages(context.Context, *connect_go.Request[v1.GetPagesRequest]) (*connect_go.Response[v1.GetPagesResponse], error) {
+func (UnimplementedPageServiceHandler) ListPages(context.Context, *connect_go.Request[v1.ListPagesRequest]) (*connect_go.Response[v1.ListPagesResponse], error) {
 	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("proto.dynamic.v1.PageService.ListPages is not implemented"))
 }
 

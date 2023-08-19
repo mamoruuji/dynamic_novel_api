@@ -12,23 +12,18 @@ go run ./cmd/server/main.go
 curl \
 --header "Content-Type: application/json" \
 --data '{}' \
-http://localhost:8080/proto.dynamic.v1.DynamicService/GetDynamics
+http://localhost:8080/proto.dynamic.v1.DynamicService/ListDynamics
 
 curl \
 --header "Content-Type: application/json" \
 --data '{}' \
-http://127.0.0.1:8080/proto.dynamic.v1.DynamicService/GetDynamics
+http://127.0.0.1:8080/proto.dynamic.v1.DynamicService/ListDynamics
 
-
-curl \
---header "Content-Type: application/json" \
---data '{}' \
-http://localhost:8080/v1/dynamics
 
 grpcurl \
 -protoset <(buf build -o -) -plaintext \
 -d '{}' \
-localhost:8080 proto.dynamic.v1.DynamicService/GetDynamics
+localhost:8080 proto.dynamic.v1.DynamicService/ListDynamics
 
 ドキュメント生成
 protoc \

@@ -49,7 +49,6 @@ const (
 
 // DynamicServiceClient is a client for the proto.dynamic.v1.DynamicService service.
 type DynamicServiceClient interface {
-	// rpc ListDynamics(ListDynamicsRequest) returns (ListDynamicsResponse) {}
 	ListDynamics(context.Context, *connect_go.Request[v1.ListDynamicsRequest]) (*connect_go.Response[v1.ListDynamicsResponse], error)
 	AddDynamic(context.Context, *connect_go.Request[v1.AddDynamicRequest]) (*connect_go.Response[v1.AddDynamicResponse], error)
 	DeleteDynamic(context.Context, *connect_go.Request[v1.DeleteDynamicRequest]) (*connect_go.Response[v1.DeleteDynamicResponse], error)
@@ -119,7 +118,6 @@ func (c *dynamicServiceClient) UpdateDynamicStatus(ctx context.Context, req *con
 
 // DynamicServiceHandler is an implementation of the proto.dynamic.v1.DynamicService service.
 type DynamicServiceHandler interface {
-	// rpc ListDynamics(ListDynamicsRequest) returns (ListDynamicsResponse) {}
 	ListDynamics(context.Context, *connect_go.Request[v1.ListDynamicsRequest]) (*connect_go.Response[v1.ListDynamicsResponse], error)
 	AddDynamic(context.Context, *connect_go.Request[v1.AddDynamicRequest]) (*connect_go.Response[v1.AddDynamicResponse], error)
 	DeleteDynamic(context.Context, *connect_go.Request[v1.DeleteDynamicRequest]) (*connect_go.Response[v1.DeleteDynamicResponse], error)

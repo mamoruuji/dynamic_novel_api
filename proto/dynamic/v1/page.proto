@@ -15,9 +15,9 @@ message PageData {
   int32 chapter_id = 4;
 }
 
-message GetPagesRequest {}
+message ListPagesRequest {}
 
-message GetPagesResponse {
+message ListPagesResponse {
   repeated PageData pages = 1;
 }
 
@@ -46,7 +46,7 @@ message UpdatePageStatusRequest {
 message UpdatePageStatusResponse {}
 
 service PageService {
-  rpc ListPages(GetPagesRequest) returns (GetPagesResponse) {}
+  rpc ListPages(ListPagesRequest) returns (ListPagesResponse) {}
   rpc AddPage(AddPageRequest) returns (AddPageResponse) {}
   rpc DeletePage(DeletePageRequest) returns (DeletePageResponse) {}
   rpc UpdatePageStatus(UpdatePageStatusRequest) returns (UpdatePageStatusResponse) {}

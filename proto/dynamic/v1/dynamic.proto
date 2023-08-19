@@ -3,7 +3,7 @@ syntax = "proto3";
 package proto.dynamic.v1;
 
 // import "google/api/annotations.proto";
-// import "google/protobuf/timestamp.proto";
+import "google/protobuf/timestamp.proto";
 // import "google/protobuf/empty.proto";
 
 option go_package = "github.com/amomon/dynamic_novel_api/gen/proto/dynamic/v1;dynamicv1";
@@ -14,6 +14,8 @@ message DynamicData {
   string overview = 3;
   string user_id = 4;
   bool published = 5;
+  google.protobuf.Timestamp created_at = 6;
+  google.protobuf.Timestamp updated_at = 7;
 }
 
 message ListDynamicsRequest {}
