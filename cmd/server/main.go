@@ -25,7 +25,7 @@ type dynamicServer struct {
 	dynamicv1connect.DynamicServiceHandler
 }
 
-func (s *dynamicServer) GetDynamics(ctx context.Context, _ *connect.Request[dynamicv1.GetDynamicsRequest]) (*connect.Response[dynamicv1.GetDynamicsResponse], error) {
+func (s *dynamicServer) ListDynamics(ctx context.Context, _ *connect.Request[dynamicv1.ListDynamicsRequest]) (*connect.Response[dynamicv1.ListDynamicsResponse], error) {
 	dynamics, err := models.Dynamics().All(ctx, boil.GetContextDB())
 	if err != nil {
 		log.Printf("failed to get dynamics: %v", err)
@@ -45,7 +45,7 @@ func (s *dynamicServer) GetDynamics(ctx context.Context, _ *connect.Request[dyna
 		pbDynamics = append(pbDynamics, pbDynamic)
 	}
 
-	res := connect.NewResponse(&dynamicv1.GetDynamicsResponse{
+	res := connect.NewResponse(&dynamicv1.ListDynamicsResponse{
 		Dynamics: pbDynamics,
 	})
 
@@ -130,11 +130,11 @@ func main() {
 
 	err = http.ListenAndServe(
 		":8080",
-		// Use h2c so we can serve HTTP/2 without TLS.
 		h2c.NewHandler(mux, &http2.Server{}),
 	)
+
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to listen(tcp, :8080)")
 	}
 
 }

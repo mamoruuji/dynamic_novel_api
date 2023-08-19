@@ -84,7 +84,7 @@ func TestGetDynamicsHandler(t *testing.T) {
 				server.URL,
 			)
 
-			res, err := client.GetDynamics(context.Background(), connect.NewRequest(&dynamicv1.GetDynamicsRequest{}))
+			res, err := client.ListDynamics(context.Background(), connect.NewRequest(&dynamicv1.ListDynamicsRequest{}))
 			if err != nil {
 				t.Error(err)
 			}

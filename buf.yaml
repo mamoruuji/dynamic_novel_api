@@ -1,7 +1,9 @@
 version: v1
-breaking:
-  use:
+breaking: ## 破壊的変更の検知
+  use: ## 破壊的変更の検知として、何を起点(ID)にしてチェックを行うかを判別
     - FILE
+# deps:
+#   - buf.build/googleapis/googleapis ## connect-go で利用不可の模様
 lint:
   use:
-    - DEFAULT
+    - DEFAULT ## bufが標準的に用意しているルールの適用

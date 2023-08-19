@@ -1,8 +1,12 @@
 syntax = "proto3";
 
-option go_package = "github.com/amomon/dynamic_novel_api/gen/proto/dynamic/v1;dynamicv1";
-
 package proto.dynamic.v1;
+
+// import "google/api/annotations.proto";
+// import "google/protobuf/timestamp.proto";
+// import "google/protobuf/empty.proto";
+
+option go_package = "github.com/amomon/dynamic_novel_api/gen/proto/dynamic/v1;dynamicv1";
 
 message DynamicData {
   int32 dynamic_id = 1;
@@ -12,9 +16,9 @@ message DynamicData {
   bool published = 5;
 }
 
-message GetDynamicsRequest {}
+message ListDynamicsRequest {}
 
-message GetDynamicsResponse {
+message ListDynamicsResponse {
   repeated DynamicData dynamics = 1;
 }
 
@@ -43,7 +47,7 @@ message UpdateDynamicStatusRequest {
 message UpdateDynamicStatusResponse {}
 
 service DynamicService {
-  rpc GetDynamics(GetDynamicsRequest) returns (GetDynamicsResponse) {}
+  rpc ListDynamics(ListDynamicsRequest) returns (ListDynamicsResponse) {}
   rpc AddDynamic(AddDynamicRequest) returns (AddDynamicResponse) {}
   rpc DeleteDynamic(DeleteDynamicRequest) returns (DeleteDynamicResponse) {}
   rpc UpdateDynamicStatus(UpdateDynamicStatusRequest) returns (UpdateDynamicStatusResponse) {}

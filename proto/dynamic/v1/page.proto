@@ -1,0 +1,53 @@
+syntax = "proto3";
+
+package proto.dynamic.v1;
+
+// import "google/api/annotations.proto";
+// import "google/protobuf/timestamp.proto";
+// import "google/protobuf/empty.proto";
+
+option go_package = "github.com/amomon/dynamic_novel_api/gen/proto/dynamic/v1;dynamicv1";
+
+message PageData {
+  int32 page_id = 1;
+  string title = 2;
+  int32 order = 3;
+  int32 chapter_id = 4;
+}
+
+message GetPagesRequest {}
+
+message GetPagesResponse {
+  repeated PageData pages = 1;
+}
+
+message AddPageRequest {
+  string title = 1;
+  int32 chapter_id = 2;
+  int32 order = 3;
+}
+
+message AddPageResponse {
+  int32 page_id = 1;
+}
+
+message DeletePageRequest {
+  int32 page_id = 1;
+}
+
+message DeletePageResponse {}
+
+message UpdatePageStatusRequest {
+  int32 page_id = 1;
+  string title = 2;
+  int32 order = 3;
+}
+
+message UpdatePageStatusResponse {}
+
+service PageService {
+  rpc ListPages(GetPagesRequest) returns (GetPagesResponse) {}
+  rpc AddPage(AddPageRequest) returns (AddPageResponse) {}
+  rpc DeletePage(DeletePageRequest) returns (DeletePageResponse) {}
+  rpc UpdatePageStatus(UpdatePageStatusRequest) returns (UpdatePageStatusResponse) {}
+}
