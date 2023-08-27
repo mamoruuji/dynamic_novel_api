@@ -7,3 +7,4 @@ breaking: ## 破壊的変更の検知
 lint:
   use:
     - DEFAULT ## bufが標準的に用意しているルールの適用
+  rpc_allow_google_protobuf_empty_requests: true

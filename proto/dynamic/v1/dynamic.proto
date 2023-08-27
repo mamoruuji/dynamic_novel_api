@@ -2,9 +2,7 @@ syntax = "proto3";
 
 package proto.dynamic.v1;
 
-// import "google/api/annotations.proto";
 import "google/protobuf/timestamp.proto";
-// import "google/protobuf/empty.proto";
 
 option go_package = "github.com/amomon/dynamic_novel_api/gen/proto/dynamic/v1;dynamicv1";
 
