@@ -1,4 +1,4 @@
-module github.com/amomon/dynamic_novel_api
+module github.com/mamoruuji/dynamic_novel_api
 
 go 1.21
 

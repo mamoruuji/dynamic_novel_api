@@ -4,7 +4,7 @@ package proto.dynamic.v1;
 
 import "google/protobuf/timestamp.proto";
 
-option go_package = "github.com/amomon/dynamic_novel_api/gen/proto/dynamic/v1;dynamicv1";
+option go_package = "github.com/mamoruuji/dynamic_novel_api/gen/proto/dynamic/v1;dynamicv1";
 
 message DynamicData {
   int32 dynamic_id = 1;

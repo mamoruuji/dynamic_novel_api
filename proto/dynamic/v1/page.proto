@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package proto.dynamic.v1;
 
-option go_package = "github.com/amomon/dynamic_novel_api/gen/proto/dynamic/v1;dynamicv1";
+option go_package = "github.com/mamoruuji/dynamic_novel_api/gen/proto/dynamic/v1;dynamicv1";
 
 message PageData {
   int32 page_id = 1;
