@@ -3,15 +3,19 @@ package main
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"log"
 	"net/http"
+	"time"
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	_ "github.com/lib/pq"
 	"github.com/mamoruuji/dynamic_novel_api/db/models"
+	. "github.com/mamoruuji/dynamic_novel_api/db/models"
 
 	"github.com/volatiletech/sqlboiler/v4/boil"
+	. "github.com/volatiletech/sqlboiler/v4/queries/qm"
 
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
@@ -29,11 +33,53 @@ type pageServer struct {
 	dynamicv1connect.PageServiceHandler
 }
 
+type sortServer struct {
+	dynamicv1connect.SortServiceHandler
+}
+
 func (s *dynamicServer) ListDynamics(
 	ctx context.Context,
-	_ *connect.Request[dynamicv1.ListDynamicsRequest],
+	req *connect.Request[dynamicv1.ListDynamicsRequest],
 ) (*connect.Response[dynamicv1.ListDynamicsResponse], error) {
-	dynamics, err := models.Dynamics().All(ctx, boil.GetContextDB())
+	sortCategory, err := FindSort(ctx, db, int(req.Msg.SortCategory))
+
+	if err != nil {
+		log.Printf("failed to get sorts: %v", err)
+		return nil, err
+	}
+
+	modifiers := []QueryMod{
+		Load(DynamicRels.User),
+		Load(Rels(DynamicRels.DynamicsOnTags, DynamicsOnTagRels.Tag)),
+		Select(DynamicColumns.DynamicID, DynamicColumns.Title, DynamicColumns.Overview, UserColumns.Name, TagColumns.Name),
+		CustomInnerJoin(TableNames.Users, UserColumns.UserID, TableNames.Dynamics, DynamicColumns.DynamicID),
+		CustomInnerJoin(TableNames.Tags, TagColumns.TagID, TableNames.Dynamics, DynamicColumns.DynamicID),
+		DynamicWhere.Published.EQ(true),
+		DynamicWhere.UpdatedAt.GTE(*ConvertToPostgresTimestamp(req.Msg.FilterStartDate)),
+		DynamicWhere.UpdatedAt.LT(*ConvertToPostgresTimestamp(req.Msg.FilterEndDate)),
+		OrderBy(sortCategory.SQL + " " + req.Msg.SortOrder),
+	}
+
+	for _, searchKeyword := range req.Msg.SearchKeywords {
+		condition := Expr(
+			DynamicWhere.Title.ILIKE(searchKeyword),
+			Or2(UserWhere.Name.ILIKE(searchKeyword)),
+			Or2(TagWhere.Name.ILIKE(searchKeyword)),
+		)
+		modifiers = append(modifiers, condition)
+	}
+
+	for _, filterKeyword := range req.Msg.FilterKeywords {
+		condition := Expr(
+			DynamicWhere.Title.NILIKE(filterKeyword),
+			Or2(UserWhere.Name.NILIKE(filterKeyword)),
+			Or2(TagWhere.Name.NILIKE(filterKeyword)),
+		)
+		modifiers = append(modifiers, condition)
+	}
+
+	dynamics, err := Dynamics(modifiers...).All(ctx, db)
+
 	if err != nil {
 		log.Printf("failed to get dynamics: %v", err)
 		return nil, err
@@ -45,13 +91,13 @@ func (s *dynamicServer) ListDynamics(
 		createdAT := timestamppb.New(d.CreatedAt)
 		updatedAT := timestamppb.New(d.UpdatedAt)
 		pbDynamic := &dynamicv1.DynamicData{
-			DynamicId: dynamicID,
-			Title:     d.Title,
-			Overview:  d.Overview,
-			UserId:    d.UserID,
-			Published: d.Published,
-			CreatedAt: createdAT,
-			UpdatedAt: updatedAT,
+			DynamicId:   dynamicID,
+			Title:       d.Title,
+			Overview:    d.Overview,
+			UserId:      d.UserID,
+			Published:   d.Published,
+			CreatedTime: createdAT,
+			UpdatedTime: updatedAT,
 		}
 		pbDynamics = append(pbDynamics, pbDynamic)
 	}
@@ -67,7 +113,7 @@ func (s *pageServer) ListPages(
 	ctx context.Context,
 	_ *connect.Request[dynamicv1.ListPagesRequest],
 ) (*connect.Response[dynamicv1.ListPagesResponse], error) {
-	pages, err := models.Pages().All(ctx, boil.GetContextDB())
+	pages, err := models.Pages().All(ctx, db)
 	if err != nil {
 		log.Printf("failed to get dynamics: %v", err)
 		return nil, err
@@ -94,6 +140,33 @@ func (s *pageServer) ListPages(
 	return res, nil
 }
 
+func (s *sortServer) ListSorts(
+	ctx context.Context,
+	_ *connect.Request[dynamicv1.ListSortsRequest],
+) (*connect.Response[dynamicv1.ListSortsResponse], error) {
+	sorts, err := models.Sorts().All(ctx, db)
+	if err != nil {
+		log.Printf("failed to get dynamics: %v", err)
+		return nil, err
+	}
+
+	var pbSorts []*dynamicv1.SortData
+	for _, s := range sorts {
+		sortID := int32(s.SortID)
+		pbSort := &dynamicv1.SortData{
+			SortId: sortID,
+			Name:   s.Name,
+		}
+		pbSorts = append(pbSorts, pbSort)
+	}
+
+	res := connect.NewResponse(&dynamicv1.ListSortsResponse{
+		Sorts: pbSorts,
+	})
+
+	return res, nil
+}
+
 func (s *dynamicServer) AddDynamic(
 	ctx context.Context,
 	req *connect.Request[dynamicv1.AddDynamicRequest],
@@ -103,7 +176,7 @@ func (s *dynamicServer) AddDynamic(
 		UserID:    req.Msg.UserId,
 		Published: false,
 	}
-	err := d.Insert(ctx, boil.GetContextDB(), boil.Infer())
+	err := d.Insert(ctx, db, boil.Infer())
 	if err != nil {
 		log.Printf("failed to add dynamic: %v", err)
 		return nil, err
@@ -126,7 +199,7 @@ func (s *dynamicServer) DeleteDynamic(
 		DynamicID: dynamicID,
 	}
 
-	_, err := d.Delete(ctx, boil.GetContextDB())
+	_, err := d.Delete(ctx, db)
 	if err != nil {
 		log.Printf("failed to delete dynamic: %v", err)
 		return nil, err
@@ -147,7 +220,7 @@ func (s *dynamicServer) UpdateDynamicStatus(
 	d.Title = req.Msg.Title
 	d.Overview = req.Msg.Overview
 	d.Published = req.Msg.Published
-	_, err := d.Update(ctx, boil.GetContextDB(), boil.Infer())
+	_, err := d.Update(ctx, db, boil.Infer())
 	if err != nil {
 		log.Printf("failed to update dynamic status: %v", err)
 		return nil, err
@@ -156,13 +229,52 @@ func (s *dynamicServer) UpdateDynamicStatus(
 	return connect.NewResponse(&dynamicv1.UpdateDynamicStatusResponse{}), nil
 }
 
+var db boil.ContextExecutor
+
+func InitDB() {
+	db = boil.GetContextDB()
+}
+
 func server() http.Handler {
+	InitDB()
+
 	mux := http.NewServeMux()
 	path, handler := dynamicv1connect.NewDynamicServiceHandler(&dynamicServer{})
 	mux.Handle(path, handler)
 	path, handler = dynamicv1connect.NewPageServiceHandler(&pageServer{})
 	mux.Handle(path, handler)
+	path, handler = dynamicv1connect.NewSortServiceHandler(&sortServer{})
+	mux.Handle(path, handler)
 	return mux
+}
+
+func ConvertToPostgresTimestamp(dateString string) *time.Time {
+	if dateString == "" {
+		return nil
+	}
+	layout := "Mon Jan 02 2006 15:04:05 GMT-0700"
+	datetime, _ := time.Parse(layout, dateString)
+	return &datetime
+}
+
+func CustomInnerJoin(joinTable, baseTable, joinTableColumn, baseTableColumn string) QueryMod {
+	return InnerJoin(fmt.Sprintf("%s ON %s.%s = %s.%s",
+		joinTable,
+		joinTable,
+		joinTableColumn,
+		baseTable,
+		baseTableColumn,
+	))
+}
+
+func CustomLeftOuterJoin(joinTable, baseTable, joinTableColumn, baseTableColumn string) QueryMod {
+	return LeftOuterJoin(fmt.Sprintf("%s ON %s.%s = %s.%s",
+		joinTable,
+		joinTable,
+		joinTableColumn,
+		baseTable,
+		baseTableColumn,
+	))
 }
 
 func main() {

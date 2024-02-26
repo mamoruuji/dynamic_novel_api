@@ -7,8 +7,8 @@ package dynamicv1connect
 import (
 	context "context"
 	errors "errors"
-	v1 "github.com/mamoruuji/dynamic_novel_api/gen/proto/dynamic/v1"
 	connect_go "github.com/bufbuild/connect-go"
+	v1 "github.com/mamoruuji/dynamic_novel_api/gen/proto/dynamic/v1"
 	http "net/http"
 	strings "strings"
 )

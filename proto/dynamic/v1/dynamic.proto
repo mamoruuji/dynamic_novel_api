@@ -12,11 +12,18 @@ message DynamicData {
   string overview = 3;
   string user_id = 4;
   bool published = 5;
-  google.protobuf.Timestamp created_at = 6;
-  google.protobuf.Timestamp updated_at = 7;
+  google.protobuf.Timestamp created_time = 6;
+  google.protobuf.Timestamp updated_time = 7;
 }
 
-message ListDynamicsRequest {}
+message ListDynamicsRequest {
+  repeated string search_keywords = 1;
+  int32 sort_category = 3;
+  string sort_order = 4;
+  repeated string filter_keywords = 5;
+  string filter_start_date = 6;
+  string filter_end_date = 7;
+}
 
 message ListDynamicsResponse {
   repeated DynamicData dynamics = 1;

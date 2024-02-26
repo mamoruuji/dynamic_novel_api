@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package proto.dynamic.v1;
+
+option go_package = "github.com/mamoruuji/dynamic_novel_api/gen/proto/dynamic/v1;dynamicv1";
+
+message SortData {
+  int32 sort_id = 1;
+  string name = 2;
+}
+
+message ListSortsRequest {}
+
+message ListSortsResponse {
+  repeated SortData sorts = 1;
+}
+
+
+service SortService {
+  rpc ListSorts(ListSortsRequest) returns (ListSortsResponse) {}
+}
