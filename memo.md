@@ -122,3 +122,12 @@ export PATH="$PATH:$(go env GOPATH)/bin"
 echo $PATH | tr : \\n | sort
 export PATH="$(printf %s "$PATH" | awk -v RS=: -v ORS=: '!arr[$0]++')"
 ```
+
+## デバック
+```
+go get -u github.com/davecgh/go-spew/spew
+inport(
+ "github.com/davecgh/go-spew/spew"
+)
+spew.Dump(hoge)
+```
