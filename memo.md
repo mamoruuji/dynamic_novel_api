@@ -104,8 +104,8 @@ go 1.21
 ```
 curl \
 --header "Content-Type: application/json" \
---data '{}' \
-http://localhost:8080/proto.todo.v1.TodoService/ListTodos
+--data '{"dynamic_id": "3"}' \
+http://localhost:8080/proto.dynamic.v1.DynamicService/GetDynamic
 ```
 
 - 別ターミナルから実行
@@ -113,7 +113,7 @@ http://localhost:8080/proto.todo.v1.TodoService/ListTodos
 curl \
 --header "Content-Type: application/json" \
 --data '{}' \
-http://dynamic_novel_server:8080/proto.todo.v1.TodoService/ListTodos
+http://dynamic_novel_server:8080/proto.dynamic.v1.DynamicService/ListDynamics
 ```
 
 ## パスの重複削除

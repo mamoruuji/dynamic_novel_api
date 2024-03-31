@@ -38,6 +38,69 @@ type sortServer struct {
 	dynamicv1connect.SortServiceHandler
 }
 
+func (s *dynamicServer) GetDynamic(
+	ctx context.Context,
+	req *connect.Request[dynamicv1.GetDynamicRequest],
+) (*connect.Response[dynamicv1.GetDynamicResponse], error) {
+
+	// boil.DebugMode = true
+	modifiers := []QueryMod{
+		Load(DynamicRels.Chapters),
+		Load(Rels(DynamicRels.Chapters, ChapterRels.Pages)),
+		// Load(DynamicRels.DynamicTerms),
+		DynamicWhere.DynamicID.EQ(int(req.Msg.DynamicId)),
+	}
+
+	dynamic, err := Dynamics(modifiers...).One(ctx, db)
+	// spew.Dump(page)
+
+	var pbChapters []*dynamicv1.GetChapterData
+	for _, chapter := range dynamic.R.Chapters {
+		var pbPages []*dynamicv1.GetPageData
+		for _, page := range chapter.R.Pages {
+			pageID := int32(page.PageID)
+			pageOrder := int32(page.Order)
+			pbPage := &dynamicv1.GetPageData{
+				PageId: pageID,
+				Title:  page.Title,
+				Order:  pageOrder,
+			}
+			pbPages = append(pbPages, pbPage)
+		}
+		chapterID := int32(chapter.ChapterID)
+		chapterOrder := int32(chapter.Order)
+		pbChapter := &dynamicv1.GetChapterData{
+			ChapterId: chapterID,
+			Title:     chapter.Title,
+			Order:     chapterOrder,
+			Pages:     pbPages,
+		}
+		pbChapters = append(pbChapters, pbChapter)
+	}
+
+	if err != nil {
+		log.Printf("failed to get dynamics: %v", err)
+		return nil, err
+	}
+
+	dynamicID := int32(dynamic.DynamicID)
+	createdAT := timestamppb.New(dynamic.CreatedAt)
+	updatedAT := timestamppb.New(dynamic.UpdatedAt)
+
+	res := connect.NewResponse(&dynamicv1.GetDynamicResponse{
+		DynamicId:   dynamicID,
+		Title:       dynamic.Title,
+		Overview:    dynamic.Overview,
+		UserId:      dynamic.UserID,
+		Published:   dynamic.Published,
+		Chapters:    pbChapters,
+		CreatedTime: createdAT,
+		UpdatedTime: updatedAT,
+	})
+
+	return res, nil
+}
+
 func (s *dynamicServer) ListDynamics(
 	ctx context.Context,
 	req *connect.Request[dynamicv1.ListDynamicsRequest],
@@ -49,7 +112,6 @@ func (s *dynamicServer) ListDynamics(
 		return nil, err
 	}
 
-	// boil.DebugMode = true
 	modifiers := []QueryMod{
 		DynamicWhere.Published.EQ(true),
 		OrderBy(fmt.Sprintf("%s %s", sortCategory.SQL, req.Msg.SortOrder)),
@@ -70,7 +132,6 @@ func (s *dynamicServer) ListDynamics(
 				Dwhere = append(Dwhere, Or2(DynamicWhere.Title.ILIKE(keyword)))
 				Uwhere = append(Uwhere, Or2(UserWhere.Name.ILIKE(keyword)))
 				Twhere = append(Twhere, Or2(TagWhere.Name.ILIKE(keyword)))
-				// spew.Dump(modifiers)
 			}
 			Dwhere = append(Dwhere, Or2(UserWhere.Name.ILIKE(keyword)))
 			Dwhere = append(Dwhere, Or2(TagWhere.Name.ILIKE(keyword)))
@@ -114,17 +175,17 @@ func (s *dynamicServer) ListDynamics(
 		return nil, err
 	}
 
-	var pbDynamics []*dynamicv1.DynamicData
-	for _, d := range dynamics {
-		dynamicID := int32(d.DynamicID)
-		createdAT := timestamppb.New(d.CreatedAt)
-		updatedAT := timestamppb.New(d.UpdatedAt)
-		pbDynamic := &dynamicv1.DynamicData{
+	var pbDynamics []*dynamicv1.ListDynamicData
+	for _, dynamic := range dynamics {
+		dynamicID := int32(dynamic.DynamicID)
+		createdAT := timestamppb.New(dynamic.CreatedAt)
+		updatedAT := timestamppb.New(dynamic.UpdatedAt)
+		pbDynamic := &dynamicv1.ListDynamicData{
 			DynamicId:   dynamicID,
-			Title:       d.Title,
-			Overview:    d.Overview,
-			UserId:      d.UserID,
-			Published:   d.Published,
+			Title:       dynamic.Title,
+			Overview:    dynamic.Overview,
+			UserId:      dynamic.UserID,
+			Published:   dynamic.Published,
 			CreatedTime: createdAT,
 			UpdatedTime: updatedAT,
 		}

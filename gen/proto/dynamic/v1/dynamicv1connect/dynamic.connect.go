@@ -33,6 +33,9 @@ const (
 // reflection-formatted method names, remove the leading slash and convert the remaining slash to a
 // period.
 const (
+	// DynamicServiceGetDynamicProcedure is the fully-qualified name of the DynamicService's GetDynamic
+	// RPC.
+	DynamicServiceGetDynamicProcedure = "/proto.dynamic.v1.DynamicService/GetDynamic"
 	// DynamicServiceListDynamicsProcedure is the fully-qualified name of the DynamicService's
 	// ListDynamics RPC.
 	DynamicServiceListDynamicsProcedure = "/proto.dynamic.v1.DynamicService/ListDynamics"
@@ -49,6 +52,7 @@ const (
 
 // DynamicServiceClient is a client for the proto.dynamic.v1.DynamicService service.
 type DynamicServiceClient interface {
+	GetDynamic(context.Context, *connect_go.Request[v1.GetDynamicRequest]) (*connect_go.Response[v1.GetDynamicResponse], error)
 	ListDynamics(context.Context, *connect_go.Request[v1.ListDynamicsRequest]) (*connect_go.Response[v1.ListDynamicsResponse], error)
 	AddDynamic(context.Context, *connect_go.Request[v1.AddDynamicRequest]) (*connect_go.Response[v1.AddDynamicResponse], error)
 	DeleteDynamic(context.Context, *connect_go.Request[v1.DeleteDynamicRequest]) (*connect_go.Response[v1.DeleteDynamicResponse], error)
@@ -65,6 +69,11 @@ type DynamicServiceClient interface {
 func NewDynamicServiceClient(httpClient connect_go.HTTPClient, baseURL string, opts ...connect_go.ClientOption) DynamicServiceClient {
 	baseURL = strings.TrimRight(baseURL, "/")
 	return &dynamicServiceClient{
+		getDynamic: connect_go.NewClient[v1.GetDynamicRequest, v1.GetDynamicResponse](
+			httpClient,
+			baseURL+DynamicServiceGetDynamicProcedure,
+			opts...,
+		),
 		listDynamics: connect_go.NewClient[v1.ListDynamicsRequest, v1.ListDynamicsResponse](
 			httpClient,
 			baseURL+DynamicServiceListDynamicsProcedure,
@@ -90,10 +99,16 @@ func NewDynamicServiceClient(httpClient connect_go.HTTPClient, baseURL string, o
 
 // dynamicServiceClient implements DynamicServiceClient.
 type dynamicServiceClient struct {
+	getDynamic          *connect_go.Client[v1.GetDynamicRequest, v1.GetDynamicResponse]
 	listDynamics        *connect_go.Client[v1.ListDynamicsRequest, v1.ListDynamicsResponse]
 	addDynamic          *connect_go.Client[v1.AddDynamicRequest, v1.AddDynamicResponse]
 	deleteDynamic       *connect_go.Client[v1.DeleteDynamicRequest, v1.DeleteDynamicResponse]
 	updateDynamicStatus *connect_go.Client[v1.UpdateDynamicStatusRequest, v1.UpdateDynamicStatusResponse]
+}
+
+// GetDynamic calls proto.dynamic.v1.DynamicService.GetDynamic.
+func (c *dynamicServiceClient) GetDynamic(ctx context.Context, req *connect_go.Request[v1.GetDynamicRequest]) (*connect_go.Response[v1.GetDynamicResponse], error) {
+	return c.getDynamic.CallUnary(ctx, req)
 }
 
 // ListDynamics calls proto.dynamic.v1.DynamicService.ListDynamics.
@@ -118,6 +133,7 @@ func (c *dynamicServiceClient) UpdateDynamicStatus(ctx context.Context, req *con
 
 // DynamicServiceHandler is an implementation of the proto.dynamic.v1.DynamicService service.
 type DynamicServiceHandler interface {
+	GetDynamic(context.Context, *connect_go.Request[v1.GetDynamicRequest]) (*connect_go.Response[v1.GetDynamicResponse], error)
 	ListDynamics(context.Context, *connect_go.Request[v1.ListDynamicsRequest]) (*connect_go.Response[v1.ListDynamicsResponse], error)
 	AddDynamic(context.Context, *connect_go.Request[v1.AddDynamicRequest]) (*connect_go.Response[v1.AddDynamicResponse], error)
 	DeleteDynamic(context.Context, *connect_go.Request[v1.DeleteDynamicRequest]) (*connect_go.Response[v1.DeleteDynamicResponse], error)
@@ -130,6 +146,11 @@ type DynamicServiceHandler interface {
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
 func NewDynamicServiceHandler(svc DynamicServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
+	dynamicServiceGetDynamicHandler := connect_go.NewUnaryHandler(
+		DynamicServiceGetDynamicProcedure,
+		svc.GetDynamic,
+		opts...,
+	)
 	dynamicServiceListDynamicsHandler := connect_go.NewUnaryHandler(
 		DynamicServiceListDynamicsProcedure,
 		svc.ListDynamics,
@@ -152,6 +173,8 @@ func NewDynamicServiceHandler(svc DynamicServiceHandler, opts ...connect_go.Hand
 	)
 	return "/proto.dynamic.v1.DynamicService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
+		case DynamicServiceGetDynamicProcedure:
+			dynamicServiceGetDynamicHandler.ServeHTTP(w, r)
 		case DynamicServiceListDynamicsProcedure:
 			dynamicServiceListDynamicsHandler.ServeHTTP(w, r)
 		case DynamicServiceAddDynamicProcedure:
@@ -168,6 +191,10 @@ func NewDynamicServiceHandler(svc DynamicServiceHandler, opts ...connect_go.Hand
 
 // UnimplementedDynamicServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedDynamicServiceHandler struct{}
+
+func (UnimplementedDynamicServiceHandler) GetDynamic(context.Context, *connect_go.Request[v1.GetDynamicRequest]) (*connect_go.Response[v1.GetDynamicResponse], error) {
+	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("proto.dynamic.v1.DynamicService.GetDynamic is not implemented"))
+}
 
 func (UnimplementedDynamicServiceHandler) ListDynamics(context.Context, *connect_go.Request[v1.ListDynamicsRequest]) (*connect_go.Response[v1.ListDynamicsResponse], error) {
 	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("proto.dynamic.v1.DynamicService.ListDynamics is not implemented"))
