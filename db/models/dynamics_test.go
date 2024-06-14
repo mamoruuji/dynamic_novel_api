@@ -494,6 +494,129 @@ func testDynamicsInsertWhitelist(t *testing.T) {
 	}
 }
 
+func testDynamicOneToOneImageOfCoverUsingImageOfCover(t *testing.T) {
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var foreign ImageOfCover
+	var local Dynamic
+
+	seed := randomize.NewSeed()
+	if err := randomize.Struct(seed, &foreign, imageOfCoverDBTypes, true, imageOfCoverColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize ImageOfCover struct: %s", err)
+	}
+	if err := randomize.Struct(seed, &local, dynamicDBTypes, true, dynamicColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Dynamic struct: %s", err)
+	}
+
+	if err := local.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	foreign.DynamicID = local.DynamicID
+	if err := foreign.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	check, err := local.ImageOfCover().One(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if check.DynamicID != foreign.DynamicID {
+		t.Errorf("want: %v, got %v", foreign.DynamicID, check.DynamicID)
+	}
+
+	ranAfterSelectHook := false
+	AddImageOfCoverHook(boil.AfterSelectHook, func(ctx context.Context, e boil.ContextExecutor, o *ImageOfCover) error {
+		ranAfterSelectHook = true
+		return nil
+	})
+
+	slice := DynamicSlice{&local}
+	if err = local.L.LoadImageOfCover(ctx, tx, false, (*[]*Dynamic)(&slice), nil); err != nil {
+		t.Fatal(err)
+	}
+	if local.R.ImageOfCover == nil {
+		t.Error("struct should have been eager loaded")
+	}
+
+	local.R.ImageOfCover = nil
+	if err = local.L.LoadImageOfCover(ctx, tx, true, &local, nil); err != nil {
+		t.Fatal(err)
+	}
+	if local.R.ImageOfCover == nil {
+		t.Error("struct should have been eager loaded")
+	}
+
+	if !ranAfterSelectHook {
+		t.Error("failed to run AfterSelect hook for relationship")
+	}
+}
+
+func testDynamicOneToOneSetOpImageOfCoverUsingImageOfCover(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a Dynamic
+	var b, c ImageOfCover
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, dynamicDBTypes, false, strmangle.SetComplement(dynamicPrimaryKeyColumns, dynamicColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &b, imageOfCoverDBTypes, false, strmangle.SetComplement(imageOfCoverPrimaryKeyColumns, imageOfCoverColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &c, imageOfCoverDBTypes, false, strmangle.SetComplement(imageOfCoverPrimaryKeyColumns, imageOfCoverColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	for i, x := range []*ImageOfCover{&b, &c} {
+		err = a.SetImageOfCover(ctx, tx, i != 0, x)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if a.R.ImageOfCover != x {
+			t.Error("relationship struct not set to correct value")
+		}
+		if x.R.Dynamic != &a {
+			t.Error("failed to append to foreign relationship struct")
+		}
+
+		if a.DynamicID != x.DynamicID {
+			t.Error("foreign key was wrong value", a.DynamicID)
+		}
+
+		zero := reflect.Zero(reflect.TypeOf(x.DynamicID))
+		reflect.Indirect(reflect.ValueOf(&x.DynamicID)).Set(zero)
+
+		if err = x.Reload(ctx, tx); err != nil {
+			t.Fatal("failed to reload", err)
+		}
+
+		if a.DynamicID != x.DynamicID {
+			t.Error("foreign key was wrong value", a.DynamicID, x.DynamicID)
+		}
+
+		if _, err = x.Delete(ctx, tx); err != nil {
+			t.Fatal("failed to delete x", err)
+		}
+	}
+}
+
 func testDynamicToManyChapters(t *testing.T) {
 	var err error
 	ctx := context.Background()
@@ -564,84 +687,6 @@ func testDynamicToManyChapters(t *testing.T) {
 		t.Fatal(err)
 	}
 	if got := len(a.R.Chapters); got != 2 {
-		t.Error("number of eager loaded records wrong, got:", got)
-	}
-
-	if t.Failed() {
-		t.Logf("%#v", check)
-	}
-}
-
-func testDynamicToManyDynamicTerms(t *testing.T) {
-	var err error
-	ctx := context.Background()
-	tx := MustTx(boil.BeginTx(ctx, nil))
-	defer func() { _ = tx.Rollback() }()
-
-	var a Dynamic
-	var b, c DynamicTerm
-
-	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, dynamicDBTypes, true, dynamicColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Dynamic struct: %s", err)
-	}
-
-	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	if err = randomize.Struct(seed, &b, dynamicTermDBTypes, false, dynamicTermColumnsWithDefault...); err != nil {
-		t.Fatal(err)
-	}
-	if err = randomize.Struct(seed, &c, dynamicTermDBTypes, false, dynamicTermColumnsWithDefault...); err != nil {
-		t.Fatal(err)
-	}
-
-	b.DynamicID = a.DynamicID
-	c.DynamicID = a.DynamicID
-
-	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	check, err := a.DynamicTerms().All(ctx, tx)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	bFound, cFound := false, false
-	for _, v := range check {
-		if v.DynamicID == b.DynamicID {
-			bFound = true
-		}
-		if v.DynamicID == c.DynamicID {
-			cFound = true
-		}
-	}
-
-	if !bFound {
-		t.Error("expected to find b")
-	}
-	if !cFound {
-		t.Error("expected to find c")
-	}
-
-	slice := DynamicSlice{&a}
-	if err = a.L.LoadDynamicTerms(ctx, tx, false, (*[]*Dynamic)(&slice), nil); err != nil {
-		t.Fatal(err)
-	}
-	if got := len(a.R.DynamicTerms); got != 2 {
-		t.Error("number of eager loaded records wrong, got:", got)
-	}
-
-	a.R.DynamicTerms = nil
-	if err = a.L.LoadDynamicTerms(ctx, tx, true, &a, nil); err != nil {
-		t.Fatal(err)
-	}
-	if got := len(a.R.DynamicTerms); got != 2 {
 		t.Error("number of eager loaded records wrong, got:", got)
 	}
 
@@ -884,6 +929,83 @@ func testDynamicToManyMarks(t *testing.T) {
 	}
 }
 
+func testDynamicToManyTerms(t *testing.T) {
+	var err error
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a Dynamic
+	var b, c Term
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, dynamicDBTypes, true, dynamicColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Dynamic struct: %s", err)
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = randomize.Struct(seed, &b, termDBTypes, false, termColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &c, termDBTypes, false, termColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+
+	queries.Assign(&b.DynamicID, a.DynamicID)
+	queries.Assign(&c.DynamicID, a.DynamicID)
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	check, err := a.Terms().All(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	bFound, cFound := false, false
+	for _, v := range check {
+		if queries.Equal(v.DynamicID, b.DynamicID) {
+			bFound = true
+		}
+		if queries.Equal(v.DynamicID, c.DynamicID) {
+			cFound = true
+		}
+	}
+
+	if !bFound {
+		t.Error("expected to find b")
+	}
+	if !cFound {
+		t.Error("expected to find c")
+	}
+
+	slice := DynamicSlice{&a}
+	if err = a.L.LoadTerms(ctx, tx, false, (*[]*Dynamic)(&slice), nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.Terms); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	a.R.Terms = nil
+	if err = a.L.LoadTerms(ctx, tx, true, &a, nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.Terms); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	if t.Failed() {
+		t.Logf("%#v", check)
+	}
+}
+
 func testDynamicToManyAddOpChapters(t *testing.T) {
 	var err error
 
@@ -951,81 +1073,6 @@ func testDynamicToManyAddOpChapters(t *testing.T) {
 		}
 
 		count, err := a.Chapters().Count(ctx, tx)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if want := int64((i + 1) * 2); count != want {
-			t.Error("want", want, "got", count)
-		}
-	}
-}
-func testDynamicToManyAddOpDynamicTerms(t *testing.T) {
-	var err error
-
-	ctx := context.Background()
-	tx := MustTx(boil.BeginTx(ctx, nil))
-	defer func() { _ = tx.Rollback() }()
-
-	var a Dynamic
-	var b, c, d, e DynamicTerm
-
-	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, dynamicDBTypes, false, strmangle.SetComplement(dynamicPrimaryKeyColumns, dynamicColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-	foreigners := []*DynamicTerm{&b, &c, &d, &e}
-	for _, x := range foreigners {
-		if err = randomize.Struct(seed, x, dynamicTermDBTypes, false, strmangle.SetComplement(dynamicTermPrimaryKeyColumns, dynamicTermColumnsWithoutDefault)...); err != nil {
-			t.Fatal(err)
-		}
-	}
-
-	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	foreignersSplitByInsertion := [][]*DynamicTerm{
-		{&b, &c},
-		{&d, &e},
-	}
-
-	for i, x := range foreignersSplitByInsertion {
-		err = a.AddDynamicTerms(ctx, tx, i != 0, x...)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		first := x[0]
-		second := x[1]
-
-		if a.DynamicID != first.DynamicID {
-			t.Error("foreign key was wrong value", a.DynamicID, first.DynamicID)
-		}
-		if a.DynamicID != second.DynamicID {
-			t.Error("foreign key was wrong value", a.DynamicID, second.DynamicID)
-		}
-
-		if first.R.Dynamic != &a {
-			t.Error("relationship was not added properly to the foreign slice")
-		}
-		if second.R.Dynamic != &a {
-			t.Error("relationship was not added properly to the foreign slice")
-		}
-
-		if a.R.DynamicTerms[i*2] != first {
-			t.Error("relationship struct slice not set to correct value")
-		}
-		if a.R.DynamicTerms[i*2+1] != second {
-			t.Error("relationship struct slice not set to correct value")
-		}
-
-		count, err := a.DynamicTerms().Count(ctx, tx)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1259,6 +1306,257 @@ func testDynamicToManyAddOpMarks(t *testing.T) {
 		}
 	}
 }
+func testDynamicToManyAddOpTerms(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a Dynamic
+	var b, c, d, e Term
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, dynamicDBTypes, false, strmangle.SetComplement(dynamicPrimaryKeyColumns, dynamicColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*Term{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, termDBTypes, false, strmangle.SetComplement(termPrimaryKeyColumns, termColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	foreignersSplitByInsertion := [][]*Term{
+		{&b, &c},
+		{&d, &e},
+	}
+
+	for i, x := range foreignersSplitByInsertion {
+		err = a.AddTerms(ctx, tx, i != 0, x...)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		first := x[0]
+		second := x[1]
+
+		if !queries.Equal(a.DynamicID, first.DynamicID) {
+			t.Error("foreign key was wrong value", a.DynamicID, first.DynamicID)
+		}
+		if !queries.Equal(a.DynamicID, second.DynamicID) {
+			t.Error("foreign key was wrong value", a.DynamicID, second.DynamicID)
+		}
+
+		if first.R.Dynamic != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+		if second.R.Dynamic != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+
+		if a.R.Terms[i*2] != first {
+			t.Error("relationship struct slice not set to correct value")
+		}
+		if a.R.Terms[i*2+1] != second {
+			t.Error("relationship struct slice not set to correct value")
+		}
+
+		count, err := a.Terms().Count(ctx, tx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if want := int64((i + 1) * 2); count != want {
+			t.Error("want", want, "got", count)
+		}
+	}
+}
+
+func testDynamicToManySetOpTerms(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a Dynamic
+	var b, c, d, e Term
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, dynamicDBTypes, false, strmangle.SetComplement(dynamicPrimaryKeyColumns, dynamicColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*Term{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, termDBTypes, false, strmangle.SetComplement(termPrimaryKeyColumns, termColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err = a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	err = a.SetTerms(ctx, tx, false, &b, &c)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err := a.Terms().Count(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 2 {
+		t.Error("count was wrong:", count)
+	}
+
+	err = a.SetTerms(ctx, tx, true, &d, &e)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err = a.Terms().Count(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 2 {
+		t.Error("count was wrong:", count)
+	}
+
+	if !queries.IsValuerNil(b.DynamicID) {
+		t.Error("want b's foreign key value to be nil")
+	}
+	if !queries.IsValuerNil(c.DynamicID) {
+		t.Error("want c's foreign key value to be nil")
+	}
+	if !queries.Equal(a.DynamicID, d.DynamicID) {
+		t.Error("foreign key was wrong value", a.DynamicID, d.DynamicID)
+	}
+	if !queries.Equal(a.DynamicID, e.DynamicID) {
+		t.Error("foreign key was wrong value", a.DynamicID, e.DynamicID)
+	}
+
+	if b.R.Dynamic != nil {
+		t.Error("relationship was not removed properly from the foreign struct")
+	}
+	if c.R.Dynamic != nil {
+		t.Error("relationship was not removed properly from the foreign struct")
+	}
+	if d.R.Dynamic != &a {
+		t.Error("relationship was not added properly to the foreign struct")
+	}
+	if e.R.Dynamic != &a {
+		t.Error("relationship was not added properly to the foreign struct")
+	}
+
+	if a.R.Terms[0] != &d {
+		t.Error("relationship struct slice not set to correct value")
+	}
+	if a.R.Terms[1] != &e {
+		t.Error("relationship struct slice not set to correct value")
+	}
+}
+
+func testDynamicToManyRemoveOpTerms(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a Dynamic
+	var b, c, d, e Term
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, dynamicDBTypes, false, strmangle.SetComplement(dynamicPrimaryKeyColumns, dynamicColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*Term{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, termDBTypes, false, strmangle.SetComplement(termPrimaryKeyColumns, termColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	err = a.AddTerms(ctx, tx, true, foreigners...)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err := a.Terms().Count(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 4 {
+		t.Error("count was wrong:", count)
+	}
+
+	err = a.RemoveTerms(ctx, tx, foreigners[:2]...)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err = a.Terms().Count(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 2 {
+		t.Error("count was wrong:", count)
+	}
+
+	if !queries.IsValuerNil(b.DynamicID) {
+		t.Error("want b's foreign key value to be nil")
+	}
+	if !queries.IsValuerNil(c.DynamicID) {
+		t.Error("want c's foreign key value to be nil")
+	}
+
+	if b.R.Dynamic != nil {
+		t.Error("relationship was not removed properly from the foreign struct")
+	}
+	if c.R.Dynamic != nil {
+		t.Error("relationship was not removed properly from the foreign struct")
+	}
+	if d.R.Dynamic != &a {
+		t.Error("relationship to a should have been preserved")
+	}
+	if e.R.Dynamic != &a {
+		t.Error("relationship to a should have been preserved")
+	}
+
+	if len(a.R.Terms) != 2 {
+		t.Error("should have preserved two relationships")
+	}
+
+	// Removal doesn't do a stable deletion for performance so we have to flip the order
+	if a.R.Terms[1] != &d {
+		t.Error("relationship to d should have been preserved")
+	}
+	if a.R.Terms[0] != &e {
+		t.Error("relationship to e should have been preserved")
+	}
+}
+
 func testDynamicToOneUserUsingUser(t *testing.T) {
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))

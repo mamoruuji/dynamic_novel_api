@@ -494,68 +494,84 @@ func testSectionsInsertWhitelist(t *testing.T) {
 	}
 }
 
-func testSectionOneToOneSectionTermUsingSectionTerm(t *testing.T) {
+func testSectionToManyTerms(t *testing.T) {
+	var err error
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
 
-	var foreign SectionTerm
-	var local Section
+	var a Section
+	var b, c Term
 
 	seed := randomize.NewSeed()
-	if err := randomize.Struct(seed, &foreign, sectionTermDBTypes, true, sectionTermColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize SectionTerm struct: %s", err)
-	}
-	if err := randomize.Struct(seed, &local, sectionDBTypes, true, sectionColumnsWithDefault...); err != nil {
+	if err = randomize.Struct(seed, &a, sectionDBTypes, true, sectionColumnsWithDefault...); err != nil {
 		t.Errorf("Unable to randomize Section struct: %s", err)
 	}
 
-	if err := local.Insert(ctx, tx, boil.Infer()); err != nil {
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Fatal(err)
 	}
 
-	foreign.SectionID = local.SectionID
-	if err := foreign.Insert(ctx, tx, boil.Infer()); err != nil {
+	if err = randomize.Struct(seed, &b, termDBTypes, false, termColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &c, termDBTypes, false, termColumnsWithDefault...); err != nil {
 		t.Fatal(err)
 	}
 
-	check, err := local.SectionTerm().One(ctx, tx)
+	queries.Assign(&b.SectionID, a.SectionID)
+	queries.Assign(&c.SectionID, a.SectionID)
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	check, err := a.Terms().All(ctx, tx)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if check.SectionID != foreign.SectionID {
-		t.Errorf("want: %v, got %v", foreign.SectionID, check.SectionID)
+	bFound, cFound := false, false
+	for _, v := range check {
+		if queries.Equal(v.SectionID, b.SectionID) {
+			bFound = true
+		}
+		if queries.Equal(v.SectionID, c.SectionID) {
+			cFound = true
+		}
 	}
 
-	ranAfterSelectHook := false
-	AddSectionTermHook(boil.AfterSelectHook, func(ctx context.Context, e boil.ContextExecutor, o *SectionTerm) error {
-		ranAfterSelectHook = true
-		return nil
-	})
+	if !bFound {
+		t.Error("expected to find b")
+	}
+	if !cFound {
+		t.Error("expected to find c")
+	}
 
-	slice := SectionSlice{&local}
-	if err = local.L.LoadSectionTerm(ctx, tx, false, (*[]*Section)(&slice), nil); err != nil {
+	slice := SectionSlice{&a}
+	if err = a.L.LoadTerms(ctx, tx, false, (*[]*Section)(&slice), nil); err != nil {
 		t.Fatal(err)
 	}
-	if local.R.SectionTerm == nil {
-		t.Error("struct should have been eager loaded")
+	if got := len(a.R.Terms); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
 	}
 
-	local.R.SectionTerm = nil
-	if err = local.L.LoadSectionTerm(ctx, tx, true, &local, nil); err != nil {
+	a.R.Terms = nil
+	if err = a.L.LoadTerms(ctx, tx, true, &a, nil); err != nil {
 		t.Fatal(err)
 	}
-	if local.R.SectionTerm == nil {
-		t.Error("struct should have been eager loaded")
+	if got := len(a.R.Terms); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
 	}
 
-	if !ranAfterSelectHook {
-		t.Error("failed to run AfterSelect hook for relationship")
+	if t.Failed() {
+		t.Logf("%#v", check)
 	}
 }
 
-func testSectionOneToOneSetOpSectionTermUsingSectionTerm(t *testing.T) {
+func testSectionToManyAddOpTerms(t *testing.T) {
 	var err error
 
 	ctx := context.Background()
@@ -563,17 +579,17 @@ func testSectionOneToOneSetOpSectionTermUsingSectionTerm(t *testing.T) {
 	defer func() { _ = tx.Rollback() }()
 
 	var a Section
-	var b, c SectionTerm
+	var b, c, d, e Term
 
 	seed := randomize.NewSeed()
 	if err = randomize.Struct(seed, &a, sectionDBTypes, false, strmangle.SetComplement(sectionPrimaryKeyColumns, sectionColumnsWithoutDefault)...); err != nil {
 		t.Fatal(err)
 	}
-	if err = randomize.Struct(seed, &b, sectionTermDBTypes, false, strmangle.SetComplement(sectionTermPrimaryKeyColumns, sectionTermColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-	if err = randomize.Struct(seed, &c, sectionTermDBTypes, false, strmangle.SetComplement(sectionTermPrimaryKeyColumns, sectionTermColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
+	foreigners := []*Term{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, termDBTypes, false, strmangle.SetComplement(termPrimaryKeyColumns, termColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
 	}
 
 	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
@@ -582,99 +598,227 @@ func testSectionOneToOneSetOpSectionTermUsingSectionTerm(t *testing.T) {
 	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Fatal(err)
 	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
 
-	for i, x := range []*SectionTerm{&b, &c} {
-		err = a.SetSectionTerm(ctx, tx, i != 0, x)
+	foreignersSplitByInsertion := [][]*Term{
+		{&b, &c},
+		{&d, &e},
+	}
+
+	for i, x := range foreignersSplitByInsertion {
+		err = a.AddTerms(ctx, tx, i != 0, x...)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		if a.R.SectionTerm != x {
-			t.Error("relationship struct not set to correct value")
-		}
-		if x.R.Section != &a {
-			t.Error("failed to append to foreign relationship struct")
-		}
+		first := x[0]
+		second := x[1]
 
-		if a.SectionID != x.SectionID {
-			t.Error("foreign key was wrong value", a.SectionID)
+		if !queries.Equal(a.SectionID, first.SectionID) {
+			t.Error("foreign key was wrong value", a.SectionID, first.SectionID)
 		}
-
-		zero := reflect.Zero(reflect.TypeOf(x.SectionID))
-		reflect.Indirect(reflect.ValueOf(&x.SectionID)).Set(zero)
-
-		if err = x.Reload(ctx, tx); err != nil {
-			t.Fatal("failed to reload", err)
+		if !queries.Equal(a.SectionID, second.SectionID) {
+			t.Error("foreign key was wrong value", a.SectionID, second.SectionID)
 		}
 
-		if a.SectionID != x.SectionID {
-			t.Error("foreign key was wrong value", a.SectionID, x.SectionID)
+		if first.R.Section != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+		if second.R.Section != &a {
+			t.Error("relationship was not added properly to the foreign slice")
 		}
 
-		if _, err = x.Delete(ctx, tx); err != nil {
-			t.Fatal("failed to delete x", err)
+		if a.R.Terms[i*2] != first {
+			t.Error("relationship struct slice not set to correct value")
+		}
+		if a.R.Terms[i*2+1] != second {
+			t.Error("relationship struct slice not set to correct value")
+		}
+
+		count, err := a.Terms().Count(ctx, tx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if want := int64((i + 1) * 2); count != want {
+			t.Error("want", want, "got", count)
 		}
 	}
 }
 
-func testSectionToOneBubbleUsingBubble(t *testing.T) {
+func testSectionToManySetOpTerms(t *testing.T) {
+	var err error
+
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
 
-	var local Section
-	var foreign Bubble
+	var a Section
+	var b, c, d, e Term
 
 	seed := randomize.NewSeed()
-	if err := randomize.Struct(seed, &local, sectionDBTypes, true, sectionColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Section struct: %s", err)
+	if err = randomize.Struct(seed, &a, sectionDBTypes, false, strmangle.SetComplement(sectionPrimaryKeyColumns, sectionColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
 	}
-	if err := randomize.Struct(seed, &foreign, bubbleDBTypes, false, bubbleColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Bubble struct: %s", err)
+	foreigners := []*Term{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, termDBTypes, false, strmangle.SetComplement(termPrimaryKeyColumns, termColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
 	}
 
-	if err := foreign.Insert(ctx, tx, boil.Infer()); err != nil {
+	if err = a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Fatal(err)
 	}
 
-	queries.Assign(&local.BubbleID, foreign.BubbleID)
-	if err := local.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	check, err := local.Bubble().One(ctx, tx)
+	err = a.SetTerms(ctx, tx, false, &b, &c)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if !queries.Equal(check.BubbleID, foreign.BubbleID) {
-		t.Errorf("want: %v, got %v", foreign.BubbleID, check.BubbleID)
-	}
-
-	ranAfterSelectHook := false
-	AddBubbleHook(boil.AfterSelectHook, func(ctx context.Context, e boil.ContextExecutor, o *Bubble) error {
-		ranAfterSelectHook = true
-		return nil
-	})
-
-	slice := SectionSlice{&local}
-	if err = local.L.LoadBubble(ctx, tx, false, (*[]*Section)(&slice), nil); err != nil {
+	count, err := a.Terms().Count(ctx, tx)
+	if err != nil {
 		t.Fatal(err)
 	}
-	if local.R.Bubble == nil {
-		t.Error("struct should have been eager loaded")
+	if count != 2 {
+		t.Error("count was wrong:", count)
 	}
 
-	local.R.Bubble = nil
-	if err = local.L.LoadBubble(ctx, tx, true, &local, nil); err != nil {
+	err = a.SetTerms(ctx, tx, true, &d, &e)
+	if err != nil {
 		t.Fatal(err)
 	}
-	if local.R.Bubble == nil {
-		t.Error("struct should have been eager loaded")
+
+	count, err = a.Terms().Count(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 2 {
+		t.Error("count was wrong:", count)
 	}
 
-	if !ranAfterSelectHook {
-		t.Error("failed to run AfterSelect hook for relationship")
+	if !queries.IsValuerNil(b.SectionID) {
+		t.Error("want b's foreign key value to be nil")
+	}
+	if !queries.IsValuerNil(c.SectionID) {
+		t.Error("want c's foreign key value to be nil")
+	}
+	if !queries.Equal(a.SectionID, d.SectionID) {
+		t.Error("foreign key was wrong value", a.SectionID, d.SectionID)
+	}
+	if !queries.Equal(a.SectionID, e.SectionID) {
+		t.Error("foreign key was wrong value", a.SectionID, e.SectionID)
+	}
+
+	if b.R.Section != nil {
+		t.Error("relationship was not removed properly from the foreign struct")
+	}
+	if c.R.Section != nil {
+		t.Error("relationship was not removed properly from the foreign struct")
+	}
+	if d.R.Section != &a {
+		t.Error("relationship was not added properly to the foreign struct")
+	}
+	if e.R.Section != &a {
+		t.Error("relationship was not added properly to the foreign struct")
+	}
+
+	if a.R.Terms[0] != &d {
+		t.Error("relationship struct slice not set to correct value")
+	}
+	if a.R.Terms[1] != &e {
+		t.Error("relationship struct slice not set to correct value")
+	}
+}
+
+func testSectionToManyRemoveOpTerms(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a Section
+	var b, c, d, e Term
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, sectionDBTypes, false, strmangle.SetComplement(sectionPrimaryKeyColumns, sectionColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*Term{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, termDBTypes, false, strmangle.SetComplement(termPrimaryKeyColumns, termColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	err = a.AddTerms(ctx, tx, true, foreigners...)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err := a.Terms().Count(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 4 {
+		t.Error("count was wrong:", count)
+	}
+
+	err = a.RemoveTerms(ctx, tx, foreigners[:2]...)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err = a.Terms().Count(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 2 {
+		t.Error("count was wrong:", count)
+	}
+
+	if !queries.IsValuerNil(b.SectionID) {
+		t.Error("want b's foreign key value to be nil")
+	}
+	if !queries.IsValuerNil(c.SectionID) {
+		t.Error("want c's foreign key value to be nil")
+	}
+
+	if b.R.Section != nil {
+		t.Error("relationship was not removed properly from the foreign struct")
+	}
+	if c.R.Section != nil {
+		t.Error("relationship was not removed properly from the foreign struct")
+	}
+	if d.R.Section != &a {
+		t.Error("relationship to a should have been preserved")
+	}
+	if e.R.Section != &a {
+		t.Error("relationship to a should have been preserved")
+	}
+
+	if len(a.R.Terms) != 2 {
+		t.Error("should have preserved two relationships")
+	}
+
+	// Removal doesn't do a stable deletion for performance so we have to flip the order
+	if a.R.Terms[1] != &d {
+		t.Error("relationship to d should have been preserved")
+	}
+	if a.R.Terms[0] != &e {
+		t.Error("relationship to e should have been preserved")
 	}
 }
 
@@ -687,7 +831,7 @@ func testSectionToOneFontUsingFont(t *testing.T) {
 	var foreign Font
 
 	seed := randomize.NewSeed()
-	if err := randomize.Struct(seed, &local, sectionDBTypes, true, sectionColumnsWithDefault...); err != nil {
+	if err := randomize.Struct(seed, &local, sectionDBTypes, false, sectionColumnsWithDefault...); err != nil {
 		t.Errorf("Unable to randomize Section struct: %s", err)
 	}
 	if err := randomize.Struct(seed, &foreign, fontDBTypes, false, fontColumnsWithDefault...); err != nil {
@@ -698,7 +842,7 @@ func testSectionToOneFontUsingFont(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	queries.Assign(&local.FontID, foreign.FontID)
+	local.FontID = foreign.FontID
 	if err := local.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Fatal(err)
 	}
@@ -708,7 +852,7 @@ func testSectionToOneFontUsingFont(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if !queries.Equal(check.FontID, foreign.FontID) {
+	if check.FontID != foreign.FontID {
 		t.Errorf("want: %v, got %v", foreign.FontID, check.FontID)
 	}
 
@@ -731,6 +875,67 @@ func testSectionToOneFontUsingFont(t *testing.T) {
 		t.Fatal(err)
 	}
 	if local.R.Font == nil {
+		t.Error("struct should have been eager loaded")
+	}
+
+	if !ranAfterSelectHook {
+		t.Error("failed to run AfterSelect hook for relationship")
+	}
+}
+
+func testSectionToOneColorUsingFrameColor(t *testing.T) {
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var local Section
+	var foreign Color
+
+	seed := randomize.NewSeed()
+	if err := randomize.Struct(seed, &local, sectionDBTypes, false, sectionColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Section struct: %s", err)
+	}
+	if err := randomize.Struct(seed, &foreign, colorDBTypes, false, colorColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Color struct: %s", err)
+	}
+
+	if err := foreign.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	local.FrameColorID = foreign.ColorID
+	if err := local.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	check, err := local.FrameColor().One(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if check.ColorID != foreign.ColorID {
+		t.Errorf("want: %v, got %v", foreign.ColorID, check.ColorID)
+	}
+
+	ranAfterSelectHook := false
+	AddColorHook(boil.AfterSelectHook, func(ctx context.Context, e boil.ContextExecutor, o *Color) error {
+		ranAfterSelectHook = true
+		return nil
+	})
+
+	slice := SectionSlice{&local}
+	if err = local.L.LoadFrameColor(ctx, tx, false, (*[]*Section)(&slice), nil); err != nil {
+		t.Fatal(err)
+	}
+	if local.R.FrameColor == nil {
+		t.Error("struct should have been eager loaded")
+	}
+
+	local.R.FrameColor = nil
+	if err = local.L.LoadFrameColor(ctx, tx, true, &local, nil); err != nil {
+		t.Fatal(err)
+	}
+	if local.R.FrameColor == nil {
 		t.Error("struct should have been eager loaded")
 	}
 
@@ -861,59 +1066,59 @@ func testSectionToOnePageUsingPage(t *testing.T) {
 	}
 }
 
-func testSectionToOnePositionUsingPosition(t *testing.T) {
+func testSectionToOneColorUsingTextColor(t *testing.T) {
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
 
 	var local Section
-	var foreign Position
+	var foreign Color
 
 	seed := randomize.NewSeed()
-	if err := randomize.Struct(seed, &local, sectionDBTypes, true, sectionColumnsWithDefault...); err != nil {
+	if err := randomize.Struct(seed, &local, sectionDBTypes, false, sectionColumnsWithDefault...); err != nil {
 		t.Errorf("Unable to randomize Section struct: %s", err)
 	}
-	if err := randomize.Struct(seed, &foreign, positionDBTypes, false, positionColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Position struct: %s", err)
+	if err := randomize.Struct(seed, &foreign, colorDBTypes, false, colorColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Color struct: %s", err)
 	}
 
 	if err := foreign.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Fatal(err)
 	}
 
-	queries.Assign(&local.PositionID, foreign.PositionID)
+	local.TextColorID = foreign.ColorID
 	if err := local.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Fatal(err)
 	}
 
-	check, err := local.Position().One(ctx, tx)
+	check, err := local.TextColor().One(ctx, tx)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if !queries.Equal(check.PositionID, foreign.PositionID) {
-		t.Errorf("want: %v, got %v", foreign.PositionID, check.PositionID)
+	if check.ColorID != foreign.ColorID {
+		t.Errorf("want: %v, got %v", foreign.ColorID, check.ColorID)
 	}
 
 	ranAfterSelectHook := false
-	AddPositionHook(boil.AfterSelectHook, func(ctx context.Context, e boil.ContextExecutor, o *Position) error {
+	AddColorHook(boil.AfterSelectHook, func(ctx context.Context, e boil.ContextExecutor, o *Color) error {
 		ranAfterSelectHook = true
 		return nil
 	})
 
 	slice := SectionSlice{&local}
-	if err = local.L.LoadPosition(ctx, tx, false, (*[]*Section)(&slice), nil); err != nil {
+	if err = local.L.LoadTextColor(ctx, tx, false, (*[]*Section)(&slice), nil); err != nil {
 		t.Fatal(err)
 	}
-	if local.R.Position == nil {
+	if local.R.TextColor == nil {
 		t.Error("struct should have been eager loaded")
 	}
 
-	local.R.Position = nil
-	if err = local.L.LoadPosition(ctx, tx, true, &local, nil); err != nil {
+	local.R.TextColor = nil
+	if err = local.L.LoadTextColor(ctx, tx, true, &local, nil); err != nil {
 		t.Fatal(err)
 	}
-	if local.R.Position == nil {
+	if local.R.TextColor == nil {
 		t.Error("struct should have been eager loaded")
 	}
 
@@ -931,7 +1136,7 @@ func testSectionToOneTypeUsingType(t *testing.T) {
 	var foreign Type
 
 	seed := randomize.NewSeed()
-	if err := randomize.Struct(seed, &local, sectionDBTypes, true, sectionColumnsWithDefault...); err != nil {
+	if err := randomize.Struct(seed, &local, sectionDBTypes, false, sectionColumnsWithDefault...); err != nil {
 		t.Errorf("Unable to randomize Section struct: %s", err)
 	}
 	if err := randomize.Struct(seed, &foreign, typeDBTypes, false, typeColumnsWithDefault...); err != nil {
@@ -942,7 +1147,7 @@ func testSectionToOneTypeUsingType(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	queries.Assign(&local.TypeID, foreign.TypeID)
+	local.TypeID = foreign.TypeID
 	if err := local.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Fatal(err)
 	}
@@ -952,7 +1157,7 @@ func testSectionToOneTypeUsingType(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if !queries.Equal(check.TypeID, foreign.TypeID) {
+	if check.TypeID != foreign.TypeID {
 		t.Errorf("want: %v, got %v", foreign.TypeID, check.TypeID)
 	}
 
@@ -980,115 +1185,6 @@ func testSectionToOneTypeUsingType(t *testing.T) {
 
 	if !ranAfterSelectHook {
 		t.Error("failed to run AfterSelect hook for relationship")
-	}
-}
-
-func testSectionToOneSetOpBubbleUsingBubble(t *testing.T) {
-	var err error
-
-	ctx := context.Background()
-	tx := MustTx(boil.BeginTx(ctx, nil))
-	defer func() { _ = tx.Rollback() }()
-
-	var a Section
-	var b, c Bubble
-
-	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, sectionDBTypes, false, strmangle.SetComplement(sectionPrimaryKeyColumns, sectionColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-	if err = randomize.Struct(seed, &b, bubbleDBTypes, false, strmangle.SetComplement(bubblePrimaryKeyColumns, bubbleColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-	if err = randomize.Struct(seed, &c, bubbleDBTypes, false, strmangle.SetComplement(bubblePrimaryKeyColumns, bubbleColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-
-	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	for i, x := range []*Bubble{&b, &c} {
-		err = a.SetBubble(ctx, tx, i != 0, x)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		if a.R.Bubble != x {
-			t.Error("relationship struct not set to correct value")
-		}
-
-		if x.R.Sections[0] != &a {
-			t.Error("failed to append to foreign relationship struct")
-		}
-		if !queries.Equal(a.BubbleID, x.BubbleID) {
-			t.Error("foreign key was wrong value", a.BubbleID)
-		}
-
-		zero := reflect.Zero(reflect.TypeOf(a.BubbleID))
-		reflect.Indirect(reflect.ValueOf(&a.BubbleID)).Set(zero)
-
-		if err = a.Reload(ctx, tx); err != nil {
-			t.Fatal("failed to reload", err)
-		}
-
-		if !queries.Equal(a.BubbleID, x.BubbleID) {
-			t.Error("foreign key was wrong value", a.BubbleID, x.BubbleID)
-		}
-	}
-}
-
-func testSectionToOneRemoveOpBubbleUsingBubble(t *testing.T) {
-	var err error
-
-	ctx := context.Background()
-	tx := MustTx(boil.BeginTx(ctx, nil))
-	defer func() { _ = tx.Rollback() }()
-
-	var a Section
-	var b Bubble
-
-	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, sectionDBTypes, false, strmangle.SetComplement(sectionPrimaryKeyColumns, sectionColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-	if err = randomize.Struct(seed, &b, bubbleDBTypes, false, strmangle.SetComplement(bubblePrimaryKeyColumns, bubbleColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-
-	if err = a.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	if err = a.SetBubble(ctx, tx, true, &b); err != nil {
-		t.Fatal(err)
-	}
-
-	if err = a.RemoveBubble(ctx, tx, &b); err != nil {
-		t.Error("failed to remove relationship")
-	}
-
-	count, err := a.Bubble().Count(ctx, tx)
-	if err != nil {
-		t.Error(err)
-	}
-	if count != 0 {
-		t.Error("want no relationships remaining")
-	}
-
-	if a.R.Bubble != nil {
-		t.Error("R struct entry should be nil")
-	}
-
-	if !queries.IsValuerNil(a.BubbleID) {
-		t.Error("foreign key value should be nil")
-	}
-
-	if len(b.R.Sections) != 0 {
-		t.Error("failed to remove a from b's relationships")
 	}
 }
 
@@ -1133,7 +1229,7 @@ func testSectionToOneSetOpFontUsingFont(t *testing.T) {
 		if x.R.Sections[0] != &a {
 			t.Error("failed to append to foreign relationship struct")
 		}
-		if !queries.Equal(a.FontID, x.FontID) {
+		if a.FontID != x.FontID {
 			t.Error("foreign key was wrong value", a.FontID)
 		}
 
@@ -1144,13 +1240,12 @@ func testSectionToOneSetOpFontUsingFont(t *testing.T) {
 			t.Fatal("failed to reload", err)
 		}
 
-		if !queries.Equal(a.FontID, x.FontID) {
+		if a.FontID != x.FontID {
 			t.Error("foreign key was wrong value", a.FontID, x.FontID)
 		}
 	}
 }
-
-func testSectionToOneRemoveOpFontUsingFont(t *testing.T) {
+func testSectionToOneSetOpColorUsingFrameColor(t *testing.T) {
 	var err error
 
 	ctx := context.Background()
@@ -1158,49 +1253,55 @@ func testSectionToOneRemoveOpFontUsingFont(t *testing.T) {
 	defer func() { _ = tx.Rollback() }()
 
 	var a Section
-	var b Font
+	var b, c Color
 
 	seed := randomize.NewSeed()
 	if err = randomize.Struct(seed, &a, sectionDBTypes, false, strmangle.SetComplement(sectionPrimaryKeyColumns, sectionColumnsWithoutDefault)...); err != nil {
 		t.Fatal(err)
 	}
-	if err = randomize.Struct(seed, &b, fontDBTypes, false, strmangle.SetComplement(fontPrimaryKeyColumns, fontColumnsWithoutDefault)...); err != nil {
+	if err = randomize.Struct(seed, &b, colorDBTypes, false, strmangle.SetComplement(colorPrimaryKeyColumns, colorColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &c, colorDBTypes, false, strmangle.SetComplement(colorPrimaryKeyColumns, colorColumnsWithoutDefault)...); err != nil {
 		t.Fatal(err)
 	}
 
-	if err = a.Insert(ctx, tx, boil.Infer()); err != nil {
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Fatal(err)
 	}
 
-	if err = a.SetFont(ctx, tx, true, &b); err != nil {
-		t.Fatal(err)
-	}
+	for i, x := range []*Color{&b, &c} {
+		err = a.SetFrameColor(ctx, tx, i != 0, x)
+		if err != nil {
+			t.Fatal(err)
+		}
 
-	if err = a.RemoveFont(ctx, tx, &b); err != nil {
-		t.Error("failed to remove relationship")
-	}
+		if a.R.FrameColor != x {
+			t.Error("relationship struct not set to correct value")
+		}
 
-	count, err := a.Font().Count(ctx, tx)
-	if err != nil {
-		t.Error(err)
-	}
-	if count != 0 {
-		t.Error("want no relationships remaining")
-	}
+		if x.R.FrameColorSections[0] != &a {
+			t.Error("failed to append to foreign relationship struct")
+		}
+		if a.FrameColorID != x.ColorID {
+			t.Error("foreign key was wrong value", a.FrameColorID)
+		}
 
-	if a.R.Font != nil {
-		t.Error("R struct entry should be nil")
-	}
+		zero := reflect.Zero(reflect.TypeOf(a.FrameColorID))
+		reflect.Indirect(reflect.ValueOf(&a.FrameColorID)).Set(zero)
 
-	if !queries.IsValuerNil(a.FontID) {
-		t.Error("foreign key value should be nil")
-	}
+		if err = a.Reload(ctx, tx); err != nil {
+			t.Fatal("failed to reload", err)
+		}
 
-	if len(b.R.Sections) != 0 {
-		t.Error("failed to remove a from b's relationships")
+		if a.FrameColorID != x.ColorID {
+			t.Error("foreign key was wrong value", a.FrameColorID, x.ColorID)
+		}
 	}
 }
-
 func testSectionToOneSetOpImageUsingImage(t *testing.T) {
 	var err error
 
@@ -1367,7 +1468,7 @@ func testSectionToOneSetOpPageUsingPage(t *testing.T) {
 		}
 	}
 }
-func testSectionToOneSetOpPositionUsingPosition(t *testing.T) {
+func testSectionToOneSetOpColorUsingTextColor(t *testing.T) {
 	var err error
 
 	ctx := context.Background()
@@ -1375,16 +1476,16 @@ func testSectionToOneSetOpPositionUsingPosition(t *testing.T) {
 	defer func() { _ = tx.Rollback() }()
 
 	var a Section
-	var b, c Position
+	var b, c Color
 
 	seed := randomize.NewSeed()
 	if err = randomize.Struct(seed, &a, sectionDBTypes, false, strmangle.SetComplement(sectionPrimaryKeyColumns, sectionColumnsWithoutDefault)...); err != nil {
 		t.Fatal(err)
 	}
-	if err = randomize.Struct(seed, &b, positionDBTypes, false, strmangle.SetComplement(positionPrimaryKeyColumns, positionColumnsWithoutDefault)...); err != nil {
+	if err = randomize.Struct(seed, &b, colorDBTypes, false, strmangle.SetComplement(colorPrimaryKeyColumns, colorColumnsWithoutDefault)...); err != nil {
 		t.Fatal(err)
 	}
-	if err = randomize.Struct(seed, &c, positionDBTypes, false, strmangle.SetComplement(positionPrimaryKeyColumns, positionColumnsWithoutDefault)...); err != nil {
+	if err = randomize.Struct(seed, &c, colorDBTypes, false, strmangle.SetComplement(colorPrimaryKeyColumns, colorColumnsWithoutDefault)...); err != nil {
 		t.Fatal(err)
 	}
 
@@ -1395,87 +1496,35 @@ func testSectionToOneSetOpPositionUsingPosition(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	for i, x := range []*Position{&b, &c} {
-		err = a.SetPosition(ctx, tx, i != 0, x)
+	for i, x := range []*Color{&b, &c} {
+		err = a.SetTextColor(ctx, tx, i != 0, x)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		if a.R.Position != x {
+		if a.R.TextColor != x {
 			t.Error("relationship struct not set to correct value")
 		}
 
-		if x.R.Sections[0] != &a {
+		if x.R.TextColorSections[0] != &a {
 			t.Error("failed to append to foreign relationship struct")
 		}
-		if !queries.Equal(a.PositionID, x.PositionID) {
-			t.Error("foreign key was wrong value", a.PositionID)
+		if a.TextColorID != x.ColorID {
+			t.Error("foreign key was wrong value", a.TextColorID)
 		}
 
-		zero := reflect.Zero(reflect.TypeOf(a.PositionID))
-		reflect.Indirect(reflect.ValueOf(&a.PositionID)).Set(zero)
+		zero := reflect.Zero(reflect.TypeOf(a.TextColorID))
+		reflect.Indirect(reflect.ValueOf(&a.TextColorID)).Set(zero)
 
 		if err = a.Reload(ctx, tx); err != nil {
 			t.Fatal("failed to reload", err)
 		}
 
-		if !queries.Equal(a.PositionID, x.PositionID) {
-			t.Error("foreign key was wrong value", a.PositionID, x.PositionID)
+		if a.TextColorID != x.ColorID {
+			t.Error("foreign key was wrong value", a.TextColorID, x.ColorID)
 		}
 	}
 }
-
-func testSectionToOneRemoveOpPositionUsingPosition(t *testing.T) {
-	var err error
-
-	ctx := context.Background()
-	tx := MustTx(boil.BeginTx(ctx, nil))
-	defer func() { _ = tx.Rollback() }()
-
-	var a Section
-	var b Position
-
-	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, sectionDBTypes, false, strmangle.SetComplement(sectionPrimaryKeyColumns, sectionColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-	if err = randomize.Struct(seed, &b, positionDBTypes, false, strmangle.SetComplement(positionPrimaryKeyColumns, positionColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-
-	if err = a.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	if err = a.SetPosition(ctx, tx, true, &b); err != nil {
-		t.Fatal(err)
-	}
-
-	if err = a.RemovePosition(ctx, tx, &b); err != nil {
-		t.Error("failed to remove relationship")
-	}
-
-	count, err := a.Position().Count(ctx, tx)
-	if err != nil {
-		t.Error(err)
-	}
-	if count != 0 {
-		t.Error("want no relationships remaining")
-	}
-
-	if a.R.Position != nil {
-		t.Error("R struct entry should be nil")
-	}
-
-	if !queries.IsValuerNil(a.PositionID) {
-		t.Error("foreign key value should be nil")
-	}
-
-	if len(b.R.Sections) != 0 {
-		t.Error("failed to remove a from b's relationships")
-	}
-}
-
 func testSectionToOneSetOpTypeUsingType(t *testing.T) {
 	var err error
 
@@ -1517,7 +1566,7 @@ func testSectionToOneSetOpTypeUsingType(t *testing.T) {
 		if x.R.Sections[0] != &a {
 			t.Error("failed to append to foreign relationship struct")
 		}
-		if !queries.Equal(a.TypeID, x.TypeID) {
+		if a.TypeID != x.TypeID {
 			t.Error("foreign key was wrong value", a.TypeID)
 		}
 
@@ -1528,60 +1577,9 @@ func testSectionToOneSetOpTypeUsingType(t *testing.T) {
 			t.Fatal("failed to reload", err)
 		}
 
-		if !queries.Equal(a.TypeID, x.TypeID) {
+		if a.TypeID != x.TypeID {
 			t.Error("foreign key was wrong value", a.TypeID, x.TypeID)
 		}
-	}
-}
-
-func testSectionToOneRemoveOpTypeUsingType(t *testing.T) {
-	var err error
-
-	ctx := context.Background()
-	tx := MustTx(boil.BeginTx(ctx, nil))
-	defer func() { _ = tx.Rollback() }()
-
-	var a Section
-	var b Type
-
-	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, sectionDBTypes, false, strmangle.SetComplement(sectionPrimaryKeyColumns, sectionColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-	if err = randomize.Struct(seed, &b, typeDBTypes, false, strmangle.SetComplement(typePrimaryKeyColumns, typeColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-
-	if err = a.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	if err = a.SetType(ctx, tx, true, &b); err != nil {
-		t.Fatal(err)
-	}
-
-	if err = a.RemoveType(ctx, tx, &b); err != nil {
-		t.Error("failed to remove relationship")
-	}
-
-	count, err := a.Type().Count(ctx, tx)
-	if err != nil {
-		t.Error(err)
-	}
-	if count != 0 {
-		t.Error("want no relationships remaining")
-	}
-
-	if a.R.Type != nil {
-		t.Error("R struct entry should be nil")
-	}
-
-	if !queries.IsValuerNil(a.TypeID) {
-		t.Error("foreign key value should be nil")
-	}
-
-	if len(b.R.Sections) != 0 {
-		t.Error("failed to remove a from b's relationships")
 	}
 }
 
@@ -1659,7 +1657,7 @@ func testSectionsSelect(t *testing.T) {
 }
 
 var (
-	sectionDBTypes = map[string]string{`SectionID`: `integer`, `Order`: `integer`, `FrameColor`: `character varying`, `Text`: `text`, `TextColor`: `character varying`, `TextSize`: `integer`, `PageID`: `integer`, `TypeID`: `integer`, `PositionID`: `integer`, `BubbleID`: `integer`, `ImageID`: `integer`, `FontID`: `integer`, `CreatedAt`: `timestamp without time zone`, `UpdatedAt`: `timestamp without time zone`}
+	sectionDBTypes = map[string]string{`SectionID`: `integer`, `Order`: `integer`, `Text`: `text`, `TextSize`: `integer`, `PageID`: `integer`, `TypeID`: `integer`, `ImageID`: `integer`, `FontID`: `integer`, `CreatedAt`: `timestamp without time zone`, `UpdatedAt`: `timestamp without time zone`, `FrameColorID`: `integer`, `Name`: `character varying`, `TextColorID`: `integer`, `TermID`: `integer`}
 	_              = bytes.MinRead
 )
 

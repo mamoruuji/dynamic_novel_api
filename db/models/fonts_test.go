@@ -519,8 +519,9 @@ func testFontToManySections(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	queries.Assign(&b.FontID, a.FontID)
-	queries.Assign(&c.FontID, a.FontID)
+	b.FontID = a.FontID
+	c.FontID = a.FontID
+
 	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Fatal(err)
 	}
@@ -535,10 +536,10 @@ func testFontToManySections(t *testing.T) {
 
 	bFound, cFound := false, false
 	for _, v := range check {
-		if queries.Equal(v.FontID, b.FontID) {
+		if v.FontID == b.FontID {
 			bFound = true
 		}
-		if queries.Equal(v.FontID, c.FontID) {
+		if v.FontID == c.FontID {
 			cFound = true
 		}
 	}
@@ -616,10 +617,10 @@ func testFontToManyAddOpSections(t *testing.T) {
 		first := x[0]
 		second := x[1]
 
-		if !queries.Equal(a.FontID, first.FontID) {
+		if a.FontID != first.FontID {
 			t.Error("foreign key was wrong value", a.FontID, first.FontID)
 		}
-		if !queries.Equal(a.FontID, second.FontID) {
+		if a.FontID != second.FontID {
 			t.Error("foreign key was wrong value", a.FontID, second.FontID)
 		}
 
@@ -644,181 +645,6 @@ func testFontToManyAddOpSections(t *testing.T) {
 		if want := int64((i + 1) * 2); count != want {
 			t.Error("want", want, "got", count)
 		}
-	}
-}
-
-func testFontToManySetOpSections(t *testing.T) {
-	var err error
-
-	ctx := context.Background()
-	tx := MustTx(boil.BeginTx(ctx, nil))
-	defer func() { _ = tx.Rollback() }()
-
-	var a Font
-	var b, c, d, e Section
-
-	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, fontDBTypes, false, strmangle.SetComplement(fontPrimaryKeyColumns, fontColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-	foreigners := []*Section{&b, &c, &d, &e}
-	for _, x := range foreigners {
-		if err = randomize.Struct(seed, x, sectionDBTypes, false, strmangle.SetComplement(sectionPrimaryKeyColumns, sectionColumnsWithoutDefault)...); err != nil {
-			t.Fatal(err)
-		}
-	}
-
-	if err = a.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	err = a.SetSections(ctx, tx, false, &b, &c)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	count, err := a.Sections().Count(ctx, tx)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if count != 2 {
-		t.Error("count was wrong:", count)
-	}
-
-	err = a.SetSections(ctx, tx, true, &d, &e)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	count, err = a.Sections().Count(ctx, tx)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if count != 2 {
-		t.Error("count was wrong:", count)
-	}
-
-	if !queries.IsValuerNil(b.FontID) {
-		t.Error("want b's foreign key value to be nil")
-	}
-	if !queries.IsValuerNil(c.FontID) {
-		t.Error("want c's foreign key value to be nil")
-	}
-	if !queries.Equal(a.FontID, d.FontID) {
-		t.Error("foreign key was wrong value", a.FontID, d.FontID)
-	}
-	if !queries.Equal(a.FontID, e.FontID) {
-		t.Error("foreign key was wrong value", a.FontID, e.FontID)
-	}
-
-	if b.R.Font != nil {
-		t.Error("relationship was not removed properly from the foreign struct")
-	}
-	if c.R.Font != nil {
-		t.Error("relationship was not removed properly from the foreign struct")
-	}
-	if d.R.Font != &a {
-		t.Error("relationship was not added properly to the foreign struct")
-	}
-	if e.R.Font != &a {
-		t.Error("relationship was not added properly to the foreign struct")
-	}
-
-	if a.R.Sections[0] != &d {
-		t.Error("relationship struct slice not set to correct value")
-	}
-	if a.R.Sections[1] != &e {
-		t.Error("relationship struct slice not set to correct value")
-	}
-}
-
-func testFontToManyRemoveOpSections(t *testing.T) {
-	var err error
-
-	ctx := context.Background()
-	tx := MustTx(boil.BeginTx(ctx, nil))
-	defer func() { _ = tx.Rollback() }()
-
-	var a Font
-	var b, c, d, e Section
-
-	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, fontDBTypes, false, strmangle.SetComplement(fontPrimaryKeyColumns, fontColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-	foreigners := []*Section{&b, &c, &d, &e}
-	for _, x := range foreigners {
-		if err = randomize.Struct(seed, x, sectionDBTypes, false, strmangle.SetComplement(sectionPrimaryKeyColumns, sectionColumnsWithoutDefault)...); err != nil {
-			t.Fatal(err)
-		}
-	}
-
-	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	err = a.AddSections(ctx, tx, true, foreigners...)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	count, err := a.Sections().Count(ctx, tx)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if count != 4 {
-		t.Error("count was wrong:", count)
-	}
-
-	err = a.RemoveSections(ctx, tx, foreigners[:2]...)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	count, err = a.Sections().Count(ctx, tx)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if count != 2 {
-		t.Error("count was wrong:", count)
-	}
-
-	if !queries.IsValuerNil(b.FontID) {
-		t.Error("want b's foreign key value to be nil")
-	}
-	if !queries.IsValuerNil(c.FontID) {
-		t.Error("want c's foreign key value to be nil")
-	}
-
-	if b.R.Font != nil {
-		t.Error("relationship was not removed properly from the foreign struct")
-	}
-	if c.R.Font != nil {
-		t.Error("relationship was not removed properly from the foreign struct")
-	}
-	if d.R.Font != &a {
-		t.Error("relationship to a should have been preserved")
-	}
-	if e.R.Font != &a {
-		t.Error("relationship to a should have been preserved")
-	}
-
-	if len(a.R.Sections) != 2 {
-		t.Error("should have preserved two relationships")
-	}
-
-	// Removal doesn't do a stable deletion for performance so we have to flip the order
-	if a.R.Sections[1] != &d {
-		t.Error("relationship to d should have been preserved")
-	}
-	if a.R.Sections[0] != &e {
-		t.Error("relationship to e should have been preserved")
 	}
 }
 

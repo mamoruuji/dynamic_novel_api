@@ -23,10 +23,10 @@ import (
 
 // Page is an object representing the database table.
 type Page struct {
-	PageID    int       `boil:"page_id" json:"page_id" toml:"page_id" yaml:"page_id"`
+	PageID    int32     `boil:"page_id" json:"page_id" toml:"page_id" yaml:"page_id"`
 	Title     string    `boil:"title" json:"title" toml:"title" yaml:"title"`
-	Order     int       `boil:"order" json:"order" toml:"order" yaml:"order"`
-	ChapterID int       `boil:"chapter_id" json:"chapter_id" toml:"chapter_id" yaml:"chapter_id"`
+	Order     int32     `boil:"order" json:"order" toml:"order" yaml:"order"`
+	ChapterID int32     `boil:"chapter_id" json:"chapter_id" toml:"chapter_id" yaml:"chapter_id"`
 	CreatedAt time.Time `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
 	UpdatedAt time.Time `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
 
@@ -69,37 +69,37 @@ var PageTableColumns = struct {
 // Generated where
 
 var PageWhere = struct {
-	PageID    whereHelperint
+	PageID    whereHelperint32
 	Title     whereHelperstring
-	Order     whereHelperint
-	ChapterID whereHelperint
+	Order     whereHelperint32
+	ChapterID whereHelperint32
 	CreatedAt whereHelpertime_Time
 	UpdatedAt whereHelpertime_Time
 }{
-	PageID:    whereHelperint{field: "\"pages\".\"page_id\""},
+	PageID:    whereHelperint32{field: "\"pages\".\"page_id\""},
 	Title:     whereHelperstring{field: "\"pages\".\"title\""},
-	Order:     whereHelperint{field: "\"pages\".\"order\""},
-	ChapterID: whereHelperint{field: "\"pages\".\"chapter_id\""},
+	Order:     whereHelperint32{field: "\"pages\".\"order\""},
+	ChapterID: whereHelperint32{field: "\"pages\".\"chapter_id\""},
 	CreatedAt: whereHelpertime_Time{field: "\"pages\".\"created_at\""},
 	UpdatedAt: whereHelpertime_Time{field: "\"pages\".\"updated_at\""},
 }
 
 // PageRels is where relationship names are stored.
 var PageRels = struct {
-	Chapter          string
-	ChapterPageTerms string
-	Sections         string
+	Chapter  string
+	Sections string
+	Terms    string
 }{
-	Chapter:          "Chapter",
-	ChapterPageTerms: "ChapterPageTerms",
-	Sections:         "Sections",
+	Chapter:  "Chapter",
+	Sections: "Sections",
+	Terms:    "Terms",
 }
 
 // pageR is where relationships are stored.
 type pageR struct {
-	Chapter          *Chapter      `boil:"Chapter" json:"Chapter" toml:"Chapter" yaml:"Chapter"`
-	ChapterPageTerms PageTermSlice `boil:"ChapterPageTerms" json:"ChapterPageTerms" toml:"ChapterPageTerms" yaml:"ChapterPageTerms"`
-	Sections         SectionSlice  `boil:"Sections" json:"Sections" toml:"Sections" yaml:"Sections"`
+	Chapter  *Chapter     `boil:"Chapter" json:"Chapter" toml:"Chapter" yaml:"Chapter"`
+	Sections SectionSlice `boil:"Sections" json:"Sections" toml:"Sections" yaml:"Sections"`
+	Terms    TermSlice    `boil:"Terms" json:"Terms" toml:"Terms" yaml:"Terms"`
 }
 
 // NewStruct creates a new relationship struct
@@ -114,18 +114,18 @@ func (r *pageR) GetChapter() *Chapter {
 	return r.Chapter
 }
 
-func (r *pageR) GetChapterPageTerms() PageTermSlice {
-	if r == nil {
-		return nil
-	}
-	return r.ChapterPageTerms
-}
-
 func (r *pageR) GetSections() SectionSlice {
 	if r == nil {
 		return nil
 	}
 	return r.Sections
+}
+
+func (r *pageR) GetTerms() TermSlice {
+	if r == nil {
+		return nil
+	}
+	return r.Terms
 }
 
 // pageL is where Load methods for each relationship are stored.
@@ -428,20 +428,6 @@ func (o *Page) Chapter(mods ...qm.QueryMod) chapterQuery {
 	return Chapters(queryMods...)
 }
 
-// ChapterPageTerms retrieves all the page_term's PageTerms with an executor via chapter_id column.
-func (o *Page) ChapterPageTerms(mods ...qm.QueryMod) pageTermQuery {
-	var queryMods []qm.QueryMod
-	if len(mods) != 0 {
-		queryMods = append(queryMods, mods...)
-	}
-
-	queryMods = append(queryMods,
-		qm.Where("\"page_terms\".\"chapter_id\"=?", o.PageID),
-	)
-
-	return PageTerms(queryMods...)
-}
-
 // Sections retrieves all the section's Sections with an executor.
 func (o *Page) Sections(mods ...qm.QueryMod) sectionQuery {
 	var queryMods []qm.QueryMod
@@ -454,6 +440,20 @@ func (o *Page) Sections(mods ...qm.QueryMod) sectionQuery {
 	)
 
 	return Sections(queryMods...)
+}
+
+// Terms retrieves all the term's Terms with an executor.
+func (o *Page) Terms(mods ...qm.QueryMod) termQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"terms\".\"page_id\"=?", o.PageID),
+	)
+
+	return Terms(queryMods...)
 }
 
 // LoadChapter allows an eager lookup of values, cached into the
@@ -576,120 +576,6 @@ func (pageL) LoadChapter(ctx context.Context, e boil.ContextExecutor, singular b
 	return nil
 }
 
-// LoadChapterPageTerms allows an eager lookup of values, cached into the
-// loaded structs of the objects. This is for a 1-M or N-M relationship.
-func (pageL) LoadChapterPageTerms(ctx context.Context, e boil.ContextExecutor, singular bool, maybePage interface{}, mods queries.Applicator) error {
-	var slice []*Page
-	var object *Page
-
-	if singular {
-		var ok bool
-		object, ok = maybePage.(*Page)
-		if !ok {
-			object = new(Page)
-			ok = queries.SetFromEmbeddedStruct(&object, &maybePage)
-			if !ok {
-				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybePage))
-			}
-		}
-	} else {
-		s, ok := maybePage.(*[]*Page)
-		if ok {
-			slice = *s
-		} else {
-			ok = queries.SetFromEmbeddedStruct(&slice, maybePage)
-			if !ok {
-				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybePage))
-			}
-		}
-	}
-
-	args := make([]interface{}, 0, 1)
-	if singular {
-		if object.R == nil {
-			object.R = &pageR{}
-		}
-		args = append(args, object.PageID)
-	} else {
-	Outer:
-		for _, obj := range slice {
-			if obj.R == nil {
-				obj.R = &pageR{}
-			}
-
-			for _, a := range args {
-				if a == obj.PageID {
-					continue Outer
-				}
-			}
-
-			args = append(args, obj.PageID)
-		}
-	}
-
-	if len(args) == 0 {
-		return nil
-	}
-
-	query := NewQuery(
-		qm.From(`page_terms`),
-		qm.WhereIn(`page_terms.chapter_id in ?`, args...),
-	)
-	if mods != nil {
-		mods.Apply(query)
-	}
-
-	results, err := query.QueryContext(ctx, e)
-	if err != nil {
-		return errors.Wrap(err, "failed to eager load page_terms")
-	}
-
-	var resultSlice []*PageTerm
-	if err = queries.Bind(results, &resultSlice); err != nil {
-		return errors.Wrap(err, "failed to bind eager loaded slice page_terms")
-	}
-
-	if err = results.Close(); err != nil {
-		return errors.Wrap(err, "failed to close results in eager load on page_terms")
-	}
-	if err = results.Err(); err != nil {
-		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for page_terms")
-	}
-
-	if len(pageTermAfterSelectHooks) != 0 {
-		for _, obj := range resultSlice {
-			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
-				return err
-			}
-		}
-	}
-	if singular {
-		object.R.ChapterPageTerms = resultSlice
-		for _, foreign := range resultSlice {
-			if foreign.R == nil {
-				foreign.R = &pageTermR{}
-			}
-			foreign.R.Chapter = object
-		}
-		return nil
-	}
-
-	for _, foreign := range resultSlice {
-		for _, local := range slice {
-			if local.PageID == foreign.ChapterID {
-				local.R.ChapterPageTerms = append(local.R.ChapterPageTerms, foreign)
-				if foreign.R == nil {
-					foreign.R = &pageTermR{}
-				}
-				foreign.R.Chapter = local
-				break
-			}
-		}
-	}
-
-	return nil
-}
-
 // LoadSections allows an eager lookup of values, cached into the
 // loaded structs of the objects. This is for a 1-M or N-M relationship.
 func (pageL) LoadSections(ctx context.Context, e boil.ContextExecutor, singular bool, maybePage interface{}, mods queries.Applicator) error {
@@ -804,6 +690,120 @@ func (pageL) LoadSections(ctx context.Context, e boil.ContextExecutor, singular 
 	return nil
 }
 
+// LoadTerms allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (pageL) LoadTerms(ctx context.Context, e boil.ContextExecutor, singular bool, maybePage interface{}, mods queries.Applicator) error {
+	var slice []*Page
+	var object *Page
+
+	if singular {
+		var ok bool
+		object, ok = maybePage.(*Page)
+		if !ok {
+			object = new(Page)
+			ok = queries.SetFromEmbeddedStruct(&object, &maybePage)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybePage))
+			}
+		}
+	} else {
+		s, ok := maybePage.(*[]*Page)
+		if ok {
+			slice = *s
+		} else {
+			ok = queries.SetFromEmbeddedStruct(&slice, maybePage)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybePage))
+			}
+		}
+	}
+
+	args := make([]interface{}, 0, 1)
+	if singular {
+		if object.R == nil {
+			object.R = &pageR{}
+		}
+		args = append(args, object.PageID)
+	} else {
+	Outer:
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &pageR{}
+			}
+
+			for _, a := range args {
+				if queries.Equal(a, obj.PageID) {
+					continue Outer
+				}
+			}
+
+			args = append(args, obj.PageID)
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	query := NewQuery(
+		qm.From(`terms`),
+		qm.WhereIn(`terms.page_id in ?`, args...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load terms")
+	}
+
+	var resultSlice []*Term
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice terms")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on terms")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for terms")
+	}
+
+	if len(termAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.Terms = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &termR{}
+			}
+			foreign.R.Page = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if queries.Equal(local.PageID, foreign.PageID) {
+				local.R.Terms = append(local.R.Terms, foreign)
+				if foreign.R == nil {
+					foreign.R = &termR{}
+				}
+				foreign.R.Page = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
 // SetChapter of the page to the related item.
 // Sets o.R.Chapter to related.
 // Adds o to related.R.Pages.
@@ -848,59 +848,6 @@ func (o *Page) SetChapter(ctx context.Context, exec boil.ContextExecutor, insert
 		related.R.Pages = append(related.R.Pages, o)
 	}
 
-	return nil
-}
-
-// AddChapterPageTerms adds the given related objects to the existing relationships
-// of the page, optionally inserting them as new records.
-// Appends related to o.R.ChapterPageTerms.
-// Sets related.R.Chapter appropriately.
-func (o *Page) AddChapterPageTerms(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*PageTerm) error {
-	var err error
-	for _, rel := range related {
-		if insert {
-			rel.ChapterID = o.PageID
-			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
-				return errors.Wrap(err, "failed to insert into foreign table")
-			}
-		} else {
-			updateQuery := fmt.Sprintf(
-				"UPDATE \"page_terms\" SET %s WHERE %s",
-				strmangle.SetParamNames("\"", "\"", 1, []string{"chapter_id"}),
-				strmangle.WhereClause("\"", "\"", 2, pageTermPrimaryKeyColumns),
-			)
-			values := []interface{}{o.PageID, rel.PageTermID}
-
-			if boil.IsDebug(ctx) {
-				writer := boil.DebugWriterFrom(ctx)
-				fmt.Fprintln(writer, updateQuery)
-				fmt.Fprintln(writer, values)
-			}
-			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
-				return errors.Wrap(err, "failed to update foreign table")
-			}
-
-			rel.ChapterID = o.PageID
-		}
-	}
-
-	if o.R == nil {
-		o.R = &pageR{
-			ChapterPageTerms: related,
-		}
-	} else {
-		o.R.ChapterPageTerms = append(o.R.ChapterPageTerms, related...)
-	}
-
-	for _, rel := range related {
-		if rel.R == nil {
-			rel.R = &pageTermR{
-				Chapter: o,
-			}
-		} else {
-			rel.R.Chapter = o
-		}
-	}
 	return nil
 }
 
@@ -957,6 +904,133 @@ func (o *Page) AddSections(ctx context.Context, exec boil.ContextExecutor, inser
 	return nil
 }
 
+// AddTerms adds the given related objects to the existing relationships
+// of the page, optionally inserting them as new records.
+// Appends related to o.R.Terms.
+// Sets related.R.Page appropriately.
+func (o *Page) AddTerms(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*Term) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			queries.Assign(&rel.PageID, o.PageID)
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"terms\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"page_id"}),
+				strmangle.WhereClause("\"", "\"", 2, termPrimaryKeyColumns),
+			)
+			values := []interface{}{o.PageID, rel.TermID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			queries.Assign(&rel.PageID, o.PageID)
+		}
+	}
+
+	if o.R == nil {
+		o.R = &pageR{
+			Terms: related,
+		}
+	} else {
+		o.R.Terms = append(o.R.Terms, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &termR{
+				Page: o,
+			}
+		} else {
+			rel.R.Page = o
+		}
+	}
+	return nil
+}
+
+// SetTerms removes all previously related items of the
+// page replacing them completely with the passed
+// in related items, optionally inserting them as new records.
+// Sets o.R.Page's Terms accordingly.
+// Replaces o.R.Terms with related.
+// Sets related.R.Page's Terms accordingly.
+func (o *Page) SetTerms(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*Term) error {
+	query := "update \"terms\" set \"page_id\" = null where \"page_id\" = $1"
+	values := []interface{}{o.PageID}
+	if boil.IsDebug(ctx) {
+		writer := boil.DebugWriterFrom(ctx)
+		fmt.Fprintln(writer, query)
+		fmt.Fprintln(writer, values)
+	}
+	_, err := exec.ExecContext(ctx, query, values...)
+	if err != nil {
+		return errors.Wrap(err, "failed to remove relationships before set")
+	}
+
+	if o.R != nil {
+		for _, rel := range o.R.Terms {
+			queries.SetScanner(&rel.PageID, nil)
+			if rel.R == nil {
+				continue
+			}
+
+			rel.R.Page = nil
+		}
+		o.R.Terms = nil
+	}
+
+	return o.AddTerms(ctx, exec, insert, related...)
+}
+
+// RemoveTerms relationships from objects passed in.
+// Removes related items from R.Terms (uses pointer comparison, removal does not keep order)
+// Sets related.R.Page.
+func (o *Page) RemoveTerms(ctx context.Context, exec boil.ContextExecutor, related ...*Term) error {
+	if len(related) == 0 {
+		return nil
+	}
+
+	var err error
+	for _, rel := range related {
+		queries.SetScanner(&rel.PageID, nil)
+		if rel.R != nil {
+			rel.R.Page = nil
+		}
+		if _, err = rel.Update(ctx, exec, boil.Whitelist("page_id")); err != nil {
+			return err
+		}
+	}
+	if o.R == nil {
+		return nil
+	}
+
+	for _, rel := range related {
+		for i, ri := range o.R.Terms {
+			if rel != ri {
+				continue
+			}
+
+			ln := len(o.R.Terms)
+			if ln > 1 && i < ln-1 {
+				o.R.Terms[i] = o.R.Terms[ln-1]
+			}
+			o.R.Terms = o.R.Terms[:ln-1]
+			break
+		}
+	}
+
+	return nil
+}
+
 // Pages retrieves all the records using an executor.
 func Pages(mods ...qm.QueryMod) pageQuery {
 	mods = append(mods, qm.From("\"pages\""))
@@ -970,7 +1044,7 @@ func Pages(mods ...qm.QueryMod) pageQuery {
 
 // FindPage retrieves a single record by ID with an executor.
 // If selectCols is empty Find will return all columns.
-func FindPage(ctx context.Context, exec boil.ContextExecutor, pageID int, selectCols ...string) (*Page, error) {
+func FindPage(ctx context.Context, exec boil.ContextExecutor, pageID int32, selectCols ...string) (*Page, error) {
 	pageObj := &Page{}
 
 	sel := "*"
@@ -1493,7 +1567,7 @@ func (o *PageSlice) ReloadAll(ctx context.Context, exec boil.ContextExecutor) er
 }
 
 // PageExists checks if the Page row exists.
-func PageExists(ctx context.Context, exec boil.ContextExecutor, pageID int) (bool, error) {
+func PageExists(ctx context.Context, exec boil.ContextExecutor, pageID int32) (bool, error) {
 	var exists bool
 	sql := "select exists(select 1 from \"pages\" where \"page_id\"=$1 limit 1)"
 

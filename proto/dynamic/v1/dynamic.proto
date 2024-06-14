@@ -10,10 +10,11 @@ message ListDynamicData {
   int32 dynamic_id = 1;
   string title = 2;
   string overview = 3;
-  string user_id = 4;
-  bool published = 5;
-  google.protobuf.Timestamp created_time = 6;
-  google.protobuf.Timestamp updated_time = 7;
+  string user_name = 4;
+  string cover_image_name = 5;
+  repeated TagData tags = 6;
+  google.protobuf.Timestamp created_time = 7;
+  google.protobuf.Timestamp updated_time = 8;
 }
 
 message ListDynamicsRequest {
@@ -29,38 +30,55 @@ message ListDynamicsResponse {
   repeated ListDynamicData dynamics = 1;
 }
 
-message GetDynamicData {
-  int32 dynamic_id = 1;
-  string title = 2;
-  string overview = 3;
-  string user_id = 4;
-  bool published = 5;
-  repeated GetChapterData chapters = 6;
-  // repeated GetTermData terms = 7;
-  google.protobuf.Timestamp created_time = 7;
-  google.protobuf.Timestamp updated_time = 8;
-}
-
-message GetChapterData {
+message ChapterData {
   int32 chapter_id = 1;
   string title = 2;
   int32 order = 3;
-  repeated GetPageData pages = 4;
+  repeated PageData pages = 4;
+  repeated TermData terms = 5;
 }
 
-message GetPageData {
+message PageData {
   int32 page_id = 1;
   string title = 2;
   int32 order = 3;
+  repeated SectionData sections = 4;
+  repeated TermData terms = 5;
 }
 
-// message GetDynamicTermData {
-//   int32 dynamic_term_id = 1;
-//   string name = 2;
-//   string text = 3;
-//   GetImageData image = 4;
-//   int32 order = 4;
-// }
+message SectionData {
+  int32 section_id = 1;
+  string name = 2;
+  int32 order = 3;
+  string type = 4;
+  string frame_color = 5;
+  string text = 6;
+  string text_color = 7;
+  int32 text_size = 8;
+  string font = 9;
+  ImageData image = 10;
+  repeated TermData terms = 11;
+}
+
+message TermData {
+  int32 term_id = 1;
+  string name = 2;
+  string text = 3;
+  int32 order = 4;
+  ImageData image = 5;
+}
+
+message TagData {
+  int32 tag_id = 1;
+  string name = 2;
+  string path = 3;
+}
+
+message ImageData {
+  int32 image_id = 1;
+  string name = 2;
+  string path = 3;
+}
 
 message GetDynamicRequest {
   int32 dynamic_id = 1;
@@ -72,9 +90,13 @@ message GetDynamicResponse {
   string overview = 3;
   string user_id = 4;
   bool published = 5;
-  repeated GetChapterData chapters = 6;
-  google.protobuf.Timestamp created_time = 7;
-  google.protobuf.Timestamp updated_time = 8;
+  string user_name = 6;
+  string cover_image_name = 7;
+  repeated ChapterData chapters = 8;
+  repeated TermData terms = 9;
+  repeated TagData tags = 10;
+  google.protobuf.Timestamp created_time = 11;
+  google.protobuf.Timestamp updated_time = 12;
 }
 
 

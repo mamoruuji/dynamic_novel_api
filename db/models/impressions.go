@@ -23,12 +23,12 @@ import (
 
 // Impression is an object representing the database table.
 type Impression struct {
-	ImpressionID int       `boil:"impression_id" json:"impression_id" toml:"impression_id" yaml:"impression_id"`
-	Rate         int       `boil:"rate" json:"rate" toml:"rate" yaml:"rate"`
+	ImpressionID int32     `boil:"impression_id" json:"impression_id" toml:"impression_id" yaml:"impression_id"`
+	Rate         int32     `boil:"rate" json:"rate" toml:"rate" yaml:"rate"`
 	Title        string    `boil:"title" json:"title" toml:"title" yaml:"title"`
 	Text         string    `boil:"text" json:"text" toml:"text" yaml:"text"`
 	UserID       string    `boil:"user_id" json:"user_id" toml:"user_id" yaml:"user_id"`
-	DynamicID    int       `boil:"dynamic_id" json:"dynamic_id" toml:"dynamic_id" yaml:"dynamic_id"`
+	DynamicID    int32     `boil:"dynamic_id" json:"dynamic_id" toml:"dynamic_id" yaml:"dynamic_id"`
 	CreatedAt    time.Time `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
 	UpdatedAt    time.Time `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
 
@@ -79,21 +79,21 @@ var ImpressionTableColumns = struct {
 // Generated where
 
 var ImpressionWhere = struct {
-	ImpressionID whereHelperint
-	Rate         whereHelperint
+	ImpressionID whereHelperint32
+	Rate         whereHelperint32
 	Title        whereHelperstring
 	Text         whereHelperstring
 	UserID       whereHelperstring
-	DynamicID    whereHelperint
+	DynamicID    whereHelperint32
 	CreatedAt    whereHelpertime_Time
 	UpdatedAt    whereHelpertime_Time
 }{
-	ImpressionID: whereHelperint{field: "\"impressions\".\"impression_id\""},
-	Rate:         whereHelperint{field: "\"impressions\".\"rate\""},
+	ImpressionID: whereHelperint32{field: "\"impressions\".\"impression_id\""},
+	Rate:         whereHelperint32{field: "\"impressions\".\"rate\""},
 	Title:        whereHelperstring{field: "\"impressions\".\"title\""},
 	Text:         whereHelperstring{field: "\"impressions\".\"text\""},
 	UserID:       whereHelperstring{field: "\"impressions\".\"user_id\""},
-	DynamicID:    whereHelperint{field: "\"impressions\".\"dynamic_id\""},
+	DynamicID:    whereHelperint32{field: "\"impressions\".\"dynamic_id\""},
 	CreatedAt:    whereHelpertime_Time{field: "\"impressions\".\"created_at\""},
 	UpdatedAt:    whereHelpertime_Time{field: "\"impressions\".\"updated_at\""},
 }
@@ -790,7 +790,7 @@ func Impressions(mods ...qm.QueryMod) impressionQuery {
 
 // FindImpression retrieves a single record by ID with an executor.
 // If selectCols is empty Find will return all columns.
-func FindImpression(ctx context.Context, exec boil.ContextExecutor, impressionID int, selectCols ...string) (*Impression, error) {
+func FindImpression(ctx context.Context, exec boil.ContextExecutor, impressionID int32, selectCols ...string) (*Impression, error) {
 	impressionObj := &Impression{}
 
 	sel := "*"
@@ -1313,7 +1313,7 @@ func (o *ImpressionSlice) ReloadAll(ctx context.Context, exec boil.ContextExecut
 }
 
 // ImpressionExists checks if the Impression row exists.
-func ImpressionExists(ctx context.Context, exec boil.ContextExecutor, impressionID int) (bool, error) {
+func ImpressionExists(ctx context.Context, exec boil.ContextExecutor, impressionID int32) (bool, error) {
 	var exists bool
 	sql := "select exists(select 1 from \"impressions\" where \"impression_id\"=$1 limit 1)"
 

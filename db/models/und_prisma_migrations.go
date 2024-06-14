@@ -31,7 +31,7 @@ type PrismaMigration struct {
 	Logs              null.String `boil:"logs" json:"logs,omitempty" toml:"logs" yaml:"logs,omitempty"`
 	RolledBackAt      null.Time   `boil:"rolled_back_at" json:"rolled_back_at,omitempty" toml:"rolled_back_at" yaml:"rolled_back_at,omitempty"`
 	StartedAt         time.Time   `boil:"started_at" json:"started_at" toml:"started_at" yaml:"started_at"`
-	AppliedStepsCount int         `boil:"applied_steps_count" json:"applied_steps_count" toml:"applied_steps_count" yaml:"applied_steps_count"`
+	AppliedStepsCount int32       `boil:"applied_steps_count" json:"applied_steps_count" toml:"applied_steps_count" yaml:"applied_steps_count"`
 
 	R *prismaMigrationR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L prismaMigrationL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -201,22 +201,22 @@ func (w whereHelpertime_Time) GTE(x time.Time) qm.QueryMod {
 	return qmhelper.Where(w.field, qmhelper.GTE, x)
 }
 
-type whereHelperint struct{ field string }
+type whereHelperint32 struct{ field string }
 
-func (w whereHelperint) EQ(x int) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.EQ, x) }
-func (w whereHelperint) NEQ(x int) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.NEQ, x) }
-func (w whereHelperint) LT(x int) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.LT, x) }
-func (w whereHelperint) LTE(x int) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.LTE, x) }
-func (w whereHelperint) GT(x int) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.GT, x) }
-func (w whereHelperint) GTE(x int) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.GTE, x) }
-func (w whereHelperint) IN(slice []int) qm.QueryMod {
+func (w whereHelperint32) EQ(x int32) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.EQ, x) }
+func (w whereHelperint32) NEQ(x int32) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.NEQ, x) }
+func (w whereHelperint32) LT(x int32) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.LT, x) }
+func (w whereHelperint32) LTE(x int32) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.LTE, x) }
+func (w whereHelperint32) GT(x int32) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.GT, x) }
+func (w whereHelperint32) GTE(x int32) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.GTE, x) }
+func (w whereHelperint32) IN(slice []int32) qm.QueryMod {
 	values := make([]interface{}, 0, len(slice))
 	for _, value := range slice {
 		values = append(values, value)
 	}
 	return qm.WhereIn(fmt.Sprintf("%s IN ?", w.field), values...)
 }
-func (w whereHelperint) NIN(slice []int) qm.QueryMod {
+func (w whereHelperint32) NIN(slice []int32) qm.QueryMod {
 	values := make([]interface{}, 0, len(slice))
 	for _, value := range slice {
 		values = append(values, value)
@@ -232,7 +232,7 @@ var PrismaMigrationWhere = struct {
 	Logs              whereHelpernull_String
 	RolledBackAt      whereHelpernull_Time
 	StartedAt         whereHelpertime_Time
-	AppliedStepsCount whereHelperint
+	AppliedStepsCount whereHelperint32
 }{
 	ID:                whereHelperstring{field: "\"_prisma_migrations\".\"id\""},
 	Checksum:          whereHelperstring{field: "\"_prisma_migrations\".\"checksum\""},
@@ -241,7 +241,7 @@ var PrismaMigrationWhere = struct {
 	Logs:              whereHelpernull_String{field: "\"_prisma_migrations\".\"logs\""},
 	RolledBackAt:      whereHelpernull_Time{field: "\"_prisma_migrations\".\"rolled_back_at\""},
 	StartedAt:         whereHelpertime_Time{field: "\"_prisma_migrations\".\"started_at\""},
-	AppliedStepsCount: whereHelperint{field: "\"_prisma_migrations\".\"applied_steps_count\""},
+	AppliedStepsCount: whereHelperint32{field: "\"_prisma_migrations\".\"applied_steps_count\""},
 }
 
 // PrismaMigrationRels is where relationship names are stored.

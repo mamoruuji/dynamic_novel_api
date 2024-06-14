@@ -24,151 +24,151 @@ import (
 
 // Section is an object representing the database table.
 type Section struct {
-	SectionID  int         `boil:"section_id" json:"section_id" toml:"section_id" yaml:"section_id"`
-	Order      int         `boil:"order" json:"order" toml:"order" yaml:"order"`
-	FrameColor null.String `boil:"frame_color" json:"frame_color,omitempty" toml:"frame_color" yaml:"frame_color,omitempty"`
-	Text       null.String `boil:"text" json:"text,omitempty" toml:"text" yaml:"text,omitempty"`
-	TextColor  null.String `boil:"text_color" json:"text_color,omitempty" toml:"text_color" yaml:"text_color,omitempty"`
-	TextSize   null.Int    `boil:"text_size" json:"text_size,omitempty" toml:"text_size" yaml:"text_size,omitempty"`
-	PageID     int         `boil:"page_id" json:"page_id" toml:"page_id" yaml:"page_id"`
-	TypeID     null.Int    `boil:"type_id" json:"type_id,omitempty" toml:"type_id" yaml:"type_id,omitempty"`
-	PositionID null.Int    `boil:"position_id" json:"position_id,omitempty" toml:"position_id" yaml:"position_id,omitempty"`
-	BubbleID   null.Int    `boil:"bubble_id" json:"bubble_id,omitempty" toml:"bubble_id" yaml:"bubble_id,omitempty"`
-	ImageID    null.Int    `boil:"image_id" json:"image_id,omitempty" toml:"image_id" yaml:"image_id,omitempty"`
-	FontID     null.Int    `boil:"font_id" json:"font_id,omitempty" toml:"font_id" yaml:"font_id,omitempty"`
-	CreatedAt  time.Time   `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
-	UpdatedAt  time.Time   `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
+	SectionID    int32      `boil:"section_id" json:"section_id" toml:"section_id" yaml:"section_id"`
+	Order        int32      `boil:"order" json:"order" toml:"order" yaml:"order"`
+	Text         string     `boil:"text" json:"text" toml:"text" yaml:"text"`
+	TextSize     int32      `boil:"text_size" json:"text_size" toml:"text_size" yaml:"text_size"`
+	PageID       int32      `boil:"page_id" json:"page_id" toml:"page_id" yaml:"page_id"`
+	TypeID       int32      `boil:"type_id" json:"type_id" toml:"type_id" yaml:"type_id"`
+	ImageID      null.Int32 `boil:"image_id" json:"image_id,omitempty" toml:"image_id" yaml:"image_id,omitempty"`
+	FontID       int32      `boil:"font_id" json:"font_id" toml:"font_id" yaml:"font_id"`
+	CreatedAt    time.Time  `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
+	UpdatedAt    time.Time  `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
+	FrameColorID int32      `boil:"frame_color_id" json:"frame_color_id" toml:"frame_color_id" yaml:"frame_color_id"`
+	Name         string     `boil:"name" json:"name" toml:"name" yaml:"name"`
+	TextColorID  int32      `boil:"text_color_id" json:"text_color_id" toml:"text_color_id" yaml:"text_color_id"`
+	TermID       null.Int32 `boil:"term_id" json:"term_id,omitempty" toml:"term_id" yaml:"term_id,omitempty"`
 
 	R *sectionR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L sectionL  `boil:"-" json:"-" toml:"-" yaml:"-"`
 }
 
 var SectionColumns = struct {
-	SectionID  string
-	Order      string
-	FrameColor string
-	Text       string
-	TextColor  string
-	TextSize   string
-	PageID     string
-	TypeID     string
-	PositionID string
-	BubbleID   string
-	ImageID    string
-	FontID     string
-	CreatedAt  string
-	UpdatedAt  string
+	SectionID    string
+	Order        string
+	Text         string
+	TextSize     string
+	PageID       string
+	TypeID       string
+	ImageID      string
+	FontID       string
+	CreatedAt    string
+	UpdatedAt    string
+	FrameColorID string
+	Name         string
+	TextColorID  string
+	TermID       string
 }{
-	SectionID:  "section_id",
-	Order:      "order",
-	FrameColor: "frame_color",
-	Text:       "text",
-	TextColor:  "text_color",
-	TextSize:   "text_size",
-	PageID:     "page_id",
-	TypeID:     "type_id",
-	PositionID: "position_id",
-	BubbleID:   "bubble_id",
-	ImageID:    "image_id",
-	FontID:     "font_id",
-	CreatedAt:  "created_at",
-	UpdatedAt:  "updated_at",
+	SectionID:    "section_id",
+	Order:        "order",
+	Text:         "text",
+	TextSize:     "text_size",
+	PageID:       "page_id",
+	TypeID:       "type_id",
+	ImageID:      "image_id",
+	FontID:       "font_id",
+	CreatedAt:    "created_at",
+	UpdatedAt:    "updated_at",
+	FrameColorID: "frame_color_id",
+	Name:         "name",
+	TextColorID:  "text_color_id",
+	TermID:       "term_id",
 }
 
 var SectionTableColumns = struct {
-	SectionID  string
-	Order      string
-	FrameColor string
-	Text       string
-	TextColor  string
-	TextSize   string
-	PageID     string
-	TypeID     string
-	PositionID string
-	BubbleID   string
-	ImageID    string
-	FontID     string
-	CreatedAt  string
-	UpdatedAt  string
+	SectionID    string
+	Order        string
+	Text         string
+	TextSize     string
+	PageID       string
+	TypeID       string
+	ImageID      string
+	FontID       string
+	CreatedAt    string
+	UpdatedAt    string
+	FrameColorID string
+	Name         string
+	TextColorID  string
+	TermID       string
 }{
-	SectionID:  "sections.section_id",
-	Order:      "sections.order",
-	FrameColor: "sections.frame_color",
-	Text:       "sections.text",
-	TextColor:  "sections.text_color",
-	TextSize:   "sections.text_size",
-	PageID:     "sections.page_id",
-	TypeID:     "sections.type_id",
-	PositionID: "sections.position_id",
-	BubbleID:   "sections.bubble_id",
-	ImageID:    "sections.image_id",
-	FontID:     "sections.font_id",
-	CreatedAt:  "sections.created_at",
-	UpdatedAt:  "sections.updated_at",
+	SectionID:    "sections.section_id",
+	Order:        "sections.order",
+	Text:         "sections.text",
+	TextSize:     "sections.text_size",
+	PageID:       "sections.page_id",
+	TypeID:       "sections.type_id",
+	ImageID:      "sections.image_id",
+	FontID:       "sections.font_id",
+	CreatedAt:    "sections.created_at",
+	UpdatedAt:    "sections.updated_at",
+	FrameColorID: "sections.frame_color_id",
+	Name:         "sections.name",
+	TextColorID:  "sections.text_color_id",
+	TermID:       "sections.term_id",
 }
 
 // Generated where
 
 var SectionWhere = struct {
-	SectionID  whereHelperint
-	Order      whereHelperint
-	FrameColor whereHelpernull_String
-	Text       whereHelpernull_String
-	TextColor  whereHelpernull_String
-	TextSize   whereHelpernull_Int
-	PageID     whereHelperint
-	TypeID     whereHelpernull_Int
-	PositionID whereHelpernull_Int
-	BubbleID   whereHelpernull_Int
-	ImageID    whereHelpernull_Int
-	FontID     whereHelpernull_Int
-	CreatedAt  whereHelpertime_Time
-	UpdatedAt  whereHelpertime_Time
+	SectionID    whereHelperint32
+	Order        whereHelperint32
+	Text         whereHelperstring
+	TextSize     whereHelperint32
+	PageID       whereHelperint32
+	TypeID       whereHelperint32
+	ImageID      whereHelpernull_Int32
+	FontID       whereHelperint32
+	CreatedAt    whereHelpertime_Time
+	UpdatedAt    whereHelpertime_Time
+	FrameColorID whereHelperint32
+	Name         whereHelperstring
+	TextColorID  whereHelperint32
+	TermID       whereHelpernull_Int32
 }{
-	SectionID:  whereHelperint{field: "\"sections\".\"section_id\""},
-	Order:      whereHelperint{field: "\"sections\".\"order\""},
-	FrameColor: whereHelpernull_String{field: "\"sections\".\"frame_color\""},
-	Text:       whereHelpernull_String{field: "\"sections\".\"text\""},
-	TextColor:  whereHelpernull_String{field: "\"sections\".\"text_color\""},
-	TextSize:   whereHelpernull_Int{field: "\"sections\".\"text_size\""},
-	PageID:     whereHelperint{field: "\"sections\".\"page_id\""},
-	TypeID:     whereHelpernull_Int{field: "\"sections\".\"type_id\""},
-	PositionID: whereHelpernull_Int{field: "\"sections\".\"position_id\""},
-	BubbleID:   whereHelpernull_Int{field: "\"sections\".\"bubble_id\""},
-	ImageID:    whereHelpernull_Int{field: "\"sections\".\"image_id\""},
-	FontID:     whereHelpernull_Int{field: "\"sections\".\"font_id\""},
-	CreatedAt:  whereHelpertime_Time{field: "\"sections\".\"created_at\""},
-	UpdatedAt:  whereHelpertime_Time{field: "\"sections\".\"updated_at\""},
+	SectionID:    whereHelperint32{field: "\"sections\".\"section_id\""},
+	Order:        whereHelperint32{field: "\"sections\".\"order\""},
+	Text:         whereHelperstring{field: "\"sections\".\"text\""},
+	TextSize:     whereHelperint32{field: "\"sections\".\"text_size\""},
+	PageID:       whereHelperint32{field: "\"sections\".\"page_id\""},
+	TypeID:       whereHelperint32{field: "\"sections\".\"type_id\""},
+	ImageID:      whereHelpernull_Int32{field: "\"sections\".\"image_id\""},
+	FontID:       whereHelperint32{field: "\"sections\".\"font_id\""},
+	CreatedAt:    whereHelpertime_Time{field: "\"sections\".\"created_at\""},
+	UpdatedAt:    whereHelpertime_Time{field: "\"sections\".\"updated_at\""},
+	FrameColorID: whereHelperint32{field: "\"sections\".\"frame_color_id\""},
+	Name:         whereHelperstring{field: "\"sections\".\"name\""},
+	TextColorID:  whereHelperint32{field: "\"sections\".\"text_color_id\""},
+	TermID:       whereHelpernull_Int32{field: "\"sections\".\"term_id\""},
 }
 
 // SectionRels is where relationship names are stored.
 var SectionRels = struct {
-	Bubble      string
-	Font        string
-	Image       string
-	Page        string
-	Position    string
-	Type        string
-	SectionTerm string
+	Font       string
+	FrameColor string
+	Image      string
+	Page       string
+	TextColor  string
+	Type       string
+	Terms      string
 }{
-	Bubble:      "Bubble",
-	Font:        "Font",
-	Image:       "Image",
-	Page:        "Page",
-	Position:    "Position",
-	Type:        "Type",
-	SectionTerm: "SectionTerm",
+	Font:       "Font",
+	FrameColor: "FrameColor",
+	Image:      "Image",
+	Page:       "Page",
+	TextColor:  "TextColor",
+	Type:       "Type",
+	Terms:      "Terms",
 }
 
 // sectionR is where relationships are stored.
 type sectionR struct {
-	Bubble      *Bubble      `boil:"Bubble" json:"Bubble" toml:"Bubble" yaml:"Bubble"`
-	Font        *Font        `boil:"Font" json:"Font" toml:"Font" yaml:"Font"`
-	Image       *Image       `boil:"Image" json:"Image" toml:"Image" yaml:"Image"`
-	Page        *Page        `boil:"Page" json:"Page" toml:"Page" yaml:"Page"`
-	Position    *Position    `boil:"Position" json:"Position" toml:"Position" yaml:"Position"`
-	Type        *Type        `boil:"Type" json:"Type" toml:"Type" yaml:"Type"`
-	SectionTerm *SectionTerm `boil:"SectionTerm" json:"SectionTerm" toml:"SectionTerm" yaml:"SectionTerm"`
+	Font       *Font     `boil:"Font" json:"Font" toml:"Font" yaml:"Font"`
+	FrameColor *Color    `boil:"FrameColor" json:"FrameColor" toml:"FrameColor" yaml:"FrameColor"`
+	Image      *Image    `boil:"Image" json:"Image" toml:"Image" yaml:"Image"`
+	Page       *Page     `boil:"Page" json:"Page" toml:"Page" yaml:"Page"`
+	TextColor  *Color    `boil:"TextColor" json:"TextColor" toml:"TextColor" yaml:"TextColor"`
+	Type       *Type     `boil:"Type" json:"Type" toml:"Type" yaml:"Type"`
+	Terms      TermSlice `boil:"Terms" json:"Terms" toml:"Terms" yaml:"Terms"`
 }
 
 // NewStruct creates a new relationship struct
@@ -176,18 +176,18 @@ func (*sectionR) NewStruct() *sectionR {
 	return &sectionR{}
 }
 
-func (r *sectionR) GetBubble() *Bubble {
-	if r == nil {
-		return nil
-	}
-	return r.Bubble
-}
-
 func (r *sectionR) GetFont() *Font {
 	if r == nil {
 		return nil
 	}
 	return r.Font
+}
+
+func (r *sectionR) GetFrameColor() *Color {
+	if r == nil {
+		return nil
+	}
+	return r.FrameColor
 }
 
 func (r *sectionR) GetImage() *Image {
@@ -204,11 +204,11 @@ func (r *sectionR) GetPage() *Page {
 	return r.Page
 }
 
-func (r *sectionR) GetPosition() *Position {
+func (r *sectionR) GetTextColor() *Color {
 	if r == nil {
 		return nil
 	}
-	return r.Position
+	return r.TextColor
 }
 
 func (r *sectionR) GetType() *Type {
@@ -218,20 +218,20 @@ func (r *sectionR) GetType() *Type {
 	return r.Type
 }
 
-func (r *sectionR) GetSectionTerm() *SectionTerm {
+func (r *sectionR) GetTerms() TermSlice {
 	if r == nil {
 		return nil
 	}
-	return r.SectionTerm
+	return r.Terms
 }
 
 // sectionL is where Load methods for each relationship are stored.
 type sectionL struct{}
 
 var (
-	sectionAllColumns            = []string{"section_id", "order", "frame_color", "text", "text_color", "text_size", "page_id", "type_id", "position_id", "bubble_id", "image_id", "font_id", "created_at", "updated_at"}
+	sectionAllColumns            = []string{"section_id", "order", "text", "text_size", "page_id", "type_id", "image_id", "font_id", "created_at", "updated_at", "frame_color_id", "name", "text_color_id", "term_id"}
 	sectionColumnsWithoutDefault = []string{"order", "page_id", "updated_at"}
-	sectionColumnsWithDefault    = []string{"section_id", "frame_color", "text", "text_color", "text_size", "type_id", "position_id", "bubble_id", "image_id", "font_id", "created_at"}
+	sectionColumnsWithDefault    = []string{"section_id", "text", "text_size", "type_id", "image_id", "font_id", "created_at", "frame_color_id", "name", "text_color_id", "term_id"}
 	sectionPrimaryKeyColumns     = []string{"section_id"}
 	sectionGeneratedColumns      = []string{}
 )
@@ -514,17 +514,6 @@ func (q sectionQuery) Exists(ctx context.Context, exec boil.ContextExecutor) (bo
 	return count > 0, nil
 }
 
-// Bubble pointed to by the foreign key.
-func (o *Section) Bubble(mods ...qm.QueryMod) bubbleQuery {
-	queryMods := []qm.QueryMod{
-		qm.Where("\"bubble_id\" = ?", o.BubbleID),
-	}
-
-	queryMods = append(queryMods, mods...)
-
-	return Bubbles(queryMods...)
-}
-
 // Font pointed to by the foreign key.
 func (o *Section) Font(mods ...qm.QueryMod) fontQuery {
 	queryMods := []qm.QueryMod{
@@ -534,6 +523,17 @@ func (o *Section) Font(mods ...qm.QueryMod) fontQuery {
 	queryMods = append(queryMods, mods...)
 
 	return Fonts(queryMods...)
+}
+
+// FrameColor pointed to by the foreign key.
+func (o *Section) FrameColor(mods ...qm.QueryMod) colorQuery {
+	queryMods := []qm.QueryMod{
+		qm.Where("\"color_id\" = ?", o.FrameColorID),
+	}
+
+	queryMods = append(queryMods, mods...)
+
+	return Colors(queryMods...)
 }
 
 // Image pointed to by the foreign key.
@@ -558,15 +558,15 @@ func (o *Section) Page(mods ...qm.QueryMod) pageQuery {
 	return Pages(queryMods...)
 }
 
-// Position pointed to by the foreign key.
-func (o *Section) Position(mods ...qm.QueryMod) positionQuery {
+// TextColor pointed to by the foreign key.
+func (o *Section) TextColor(mods ...qm.QueryMod) colorQuery {
 	queryMods := []qm.QueryMod{
-		qm.Where("\"position_id\" = ?", o.PositionID),
+		qm.Where("\"color_id\" = ?", o.TextColorID),
 	}
 
 	queryMods = append(queryMods, mods...)
 
-	return Positions(queryMods...)
+	return Colors(queryMods...)
 }
 
 // Type pointed to by the foreign key.
@@ -580,139 +580,18 @@ func (o *Section) Type(mods ...qm.QueryMod) typeQuery {
 	return Types(queryMods...)
 }
 
-// SectionTerm pointed to by the foreign key.
-func (o *Section) SectionTerm(mods ...qm.QueryMod) sectionTermQuery {
-	queryMods := []qm.QueryMod{
-		qm.Where("\"section_id\" = ?", o.SectionID),
+// Terms retrieves all the term's Terms with an executor.
+func (o *Section) Terms(mods ...qm.QueryMod) termQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
 	}
 
-	queryMods = append(queryMods, mods...)
-
-	return SectionTerms(queryMods...)
-}
-
-// LoadBubble allows an eager lookup of values, cached into the
-// loaded structs of the objects. This is for an N-1 relationship.
-func (sectionL) LoadBubble(ctx context.Context, e boil.ContextExecutor, singular bool, maybeSection interface{}, mods queries.Applicator) error {
-	var slice []*Section
-	var object *Section
-
-	if singular {
-		var ok bool
-		object, ok = maybeSection.(*Section)
-		if !ok {
-			object = new(Section)
-			ok = queries.SetFromEmbeddedStruct(&object, &maybeSection)
-			if !ok {
-				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeSection))
-			}
-		}
-	} else {
-		s, ok := maybeSection.(*[]*Section)
-		if ok {
-			slice = *s
-		} else {
-			ok = queries.SetFromEmbeddedStruct(&slice, maybeSection)
-			if !ok {
-				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeSection))
-			}
-		}
-	}
-
-	args := make([]interface{}, 0, 1)
-	if singular {
-		if object.R == nil {
-			object.R = &sectionR{}
-		}
-		if !queries.IsNil(object.BubbleID) {
-			args = append(args, object.BubbleID)
-		}
-
-	} else {
-	Outer:
-		for _, obj := range slice {
-			if obj.R == nil {
-				obj.R = &sectionR{}
-			}
-
-			for _, a := range args {
-				if queries.Equal(a, obj.BubbleID) {
-					continue Outer
-				}
-			}
-
-			if !queries.IsNil(obj.BubbleID) {
-				args = append(args, obj.BubbleID)
-			}
-
-		}
-	}
-
-	if len(args) == 0 {
-		return nil
-	}
-
-	query := NewQuery(
-		qm.From(`bubbles`),
-		qm.WhereIn(`bubbles.bubble_id in ?`, args...),
+	queryMods = append(queryMods,
+		qm.Where("\"terms\".\"section_id\"=?", o.SectionID),
 	)
-	if mods != nil {
-		mods.Apply(query)
-	}
 
-	results, err := query.QueryContext(ctx, e)
-	if err != nil {
-		return errors.Wrap(err, "failed to eager load Bubble")
-	}
-
-	var resultSlice []*Bubble
-	if err = queries.Bind(results, &resultSlice); err != nil {
-		return errors.Wrap(err, "failed to bind eager loaded slice Bubble")
-	}
-
-	if err = results.Close(); err != nil {
-		return errors.Wrap(err, "failed to close results of eager load for bubbles")
-	}
-	if err = results.Err(); err != nil {
-		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for bubbles")
-	}
-
-	if len(bubbleAfterSelectHooks) != 0 {
-		for _, obj := range resultSlice {
-			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
-				return err
-			}
-		}
-	}
-
-	if len(resultSlice) == 0 {
-		return nil
-	}
-
-	if singular {
-		foreign := resultSlice[0]
-		object.R.Bubble = foreign
-		if foreign.R == nil {
-			foreign.R = &bubbleR{}
-		}
-		foreign.R.Sections = append(foreign.R.Sections, object)
-		return nil
-	}
-
-	for _, local := range slice {
-		for _, foreign := range resultSlice {
-			if queries.Equal(local.BubbleID, foreign.BubbleID) {
-				local.R.Bubble = foreign
-				if foreign.R == nil {
-					foreign.R = &bubbleR{}
-				}
-				foreign.R.Sections = append(foreign.R.Sections, local)
-				break
-			}
-		}
-	}
-
-	return nil
+	return Terms(queryMods...)
 }
 
 // LoadFont allows an eager lookup of values, cached into the
@@ -748,9 +627,7 @@ func (sectionL) LoadFont(ctx context.Context, e boil.ContextExecutor, singular b
 		if object.R == nil {
 			object.R = &sectionR{}
 		}
-		if !queries.IsNil(object.FontID) {
-			args = append(args, object.FontID)
-		}
+		args = append(args, object.FontID)
 
 	} else {
 	Outer:
@@ -760,14 +637,12 @@ func (sectionL) LoadFont(ctx context.Context, e boil.ContextExecutor, singular b
 			}
 
 			for _, a := range args {
-				if queries.Equal(a, obj.FontID) {
+				if a == obj.FontID {
 					continue Outer
 				}
 			}
 
-			if !queries.IsNil(obj.FontID) {
-				args = append(args, obj.FontID)
-			}
+			args = append(args, obj.FontID)
 
 		}
 	}
@@ -825,12 +700,132 @@ func (sectionL) LoadFont(ctx context.Context, e boil.ContextExecutor, singular b
 
 	for _, local := range slice {
 		for _, foreign := range resultSlice {
-			if queries.Equal(local.FontID, foreign.FontID) {
+			if local.FontID == foreign.FontID {
 				local.R.Font = foreign
 				if foreign.R == nil {
 					foreign.R = &fontR{}
 				}
 				foreign.R.Sections = append(foreign.R.Sections, local)
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// LoadFrameColor allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for an N-1 relationship.
+func (sectionL) LoadFrameColor(ctx context.Context, e boil.ContextExecutor, singular bool, maybeSection interface{}, mods queries.Applicator) error {
+	var slice []*Section
+	var object *Section
+
+	if singular {
+		var ok bool
+		object, ok = maybeSection.(*Section)
+		if !ok {
+			object = new(Section)
+			ok = queries.SetFromEmbeddedStruct(&object, &maybeSection)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeSection))
+			}
+		}
+	} else {
+		s, ok := maybeSection.(*[]*Section)
+		if ok {
+			slice = *s
+		} else {
+			ok = queries.SetFromEmbeddedStruct(&slice, maybeSection)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeSection))
+			}
+		}
+	}
+
+	args := make([]interface{}, 0, 1)
+	if singular {
+		if object.R == nil {
+			object.R = &sectionR{}
+		}
+		args = append(args, object.FrameColorID)
+
+	} else {
+	Outer:
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &sectionR{}
+			}
+
+			for _, a := range args {
+				if a == obj.FrameColorID {
+					continue Outer
+				}
+			}
+
+			args = append(args, obj.FrameColorID)
+
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	query := NewQuery(
+		qm.From(`colors`),
+		qm.WhereIn(`colors.color_id in ?`, args...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load Color")
+	}
+
+	var resultSlice []*Color
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice Color")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results of eager load for colors")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for colors")
+	}
+
+	if len(colorAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+
+	if len(resultSlice) == 0 {
+		return nil
+	}
+
+	if singular {
+		foreign := resultSlice[0]
+		object.R.FrameColor = foreign
+		if foreign.R == nil {
+			foreign.R = &colorR{}
+		}
+		foreign.R.FrameColorSections = append(foreign.R.FrameColorSections, object)
+		return nil
+	}
+
+	for _, local := range slice {
+		for _, foreign := range resultSlice {
+			if local.FrameColorID == foreign.ColorID {
+				local.R.FrameColor = foreign
+				if foreign.R == nil {
+					foreign.R = &colorR{}
+				}
+				foreign.R.FrameColorSections = append(foreign.R.FrameColorSections, local)
 				break
 			}
 		}
@@ -1083,9 +1078,9 @@ func (sectionL) LoadPage(ctx context.Context, e boil.ContextExecutor, singular b
 	return nil
 }
 
-// LoadPosition allows an eager lookup of values, cached into the
+// LoadTextColor allows an eager lookup of values, cached into the
 // loaded structs of the objects. This is for an N-1 relationship.
-func (sectionL) LoadPosition(ctx context.Context, e boil.ContextExecutor, singular bool, maybeSection interface{}, mods queries.Applicator) error {
+func (sectionL) LoadTextColor(ctx context.Context, e boil.ContextExecutor, singular bool, maybeSection interface{}, mods queries.Applicator) error {
 	var slice []*Section
 	var object *Section
 
@@ -1116,9 +1111,7 @@ func (sectionL) LoadPosition(ctx context.Context, e boil.ContextExecutor, singul
 		if object.R == nil {
 			object.R = &sectionR{}
 		}
-		if !queries.IsNil(object.PositionID) {
-			args = append(args, object.PositionID)
-		}
+		args = append(args, object.TextColorID)
 
 	} else {
 	Outer:
@@ -1128,14 +1121,12 @@ func (sectionL) LoadPosition(ctx context.Context, e boil.ContextExecutor, singul
 			}
 
 			for _, a := range args {
-				if queries.Equal(a, obj.PositionID) {
+				if a == obj.TextColorID {
 					continue Outer
 				}
 			}
 
-			if !queries.IsNil(obj.PositionID) {
-				args = append(args, obj.PositionID)
-			}
+			args = append(args, obj.TextColorID)
 
 		}
 	}
@@ -1145,8 +1136,8 @@ func (sectionL) LoadPosition(ctx context.Context, e boil.ContextExecutor, singul
 	}
 
 	query := NewQuery(
-		qm.From(`positions`),
-		qm.WhereIn(`positions.position_id in ?`, args...),
+		qm.From(`colors`),
+		qm.WhereIn(`colors.color_id in ?`, args...),
 	)
 	if mods != nil {
 		mods.Apply(query)
@@ -1154,22 +1145,22 @@ func (sectionL) LoadPosition(ctx context.Context, e boil.ContextExecutor, singul
 
 	results, err := query.QueryContext(ctx, e)
 	if err != nil {
-		return errors.Wrap(err, "failed to eager load Position")
+		return errors.Wrap(err, "failed to eager load Color")
 	}
 
-	var resultSlice []*Position
+	var resultSlice []*Color
 	if err = queries.Bind(results, &resultSlice); err != nil {
-		return errors.Wrap(err, "failed to bind eager loaded slice Position")
+		return errors.Wrap(err, "failed to bind eager loaded slice Color")
 	}
 
 	if err = results.Close(); err != nil {
-		return errors.Wrap(err, "failed to close results of eager load for positions")
+		return errors.Wrap(err, "failed to close results of eager load for colors")
 	}
 	if err = results.Err(); err != nil {
-		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for positions")
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for colors")
 	}
 
-	if len(positionAfterSelectHooks) != 0 {
+	if len(colorAfterSelectHooks) != 0 {
 		for _, obj := range resultSlice {
 			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
 				return err
@@ -1183,22 +1174,22 @@ func (sectionL) LoadPosition(ctx context.Context, e boil.ContextExecutor, singul
 
 	if singular {
 		foreign := resultSlice[0]
-		object.R.Position = foreign
+		object.R.TextColor = foreign
 		if foreign.R == nil {
-			foreign.R = &positionR{}
+			foreign.R = &colorR{}
 		}
-		foreign.R.Sections = append(foreign.R.Sections, object)
+		foreign.R.TextColorSections = append(foreign.R.TextColorSections, object)
 		return nil
 	}
 
 	for _, local := range slice {
 		for _, foreign := range resultSlice {
-			if queries.Equal(local.PositionID, foreign.PositionID) {
-				local.R.Position = foreign
+			if local.TextColorID == foreign.ColorID {
+				local.R.TextColor = foreign
 				if foreign.R == nil {
-					foreign.R = &positionR{}
+					foreign.R = &colorR{}
 				}
-				foreign.R.Sections = append(foreign.R.Sections, local)
+				foreign.R.TextColorSections = append(foreign.R.TextColorSections, local)
 				break
 			}
 		}
@@ -1240,9 +1231,7 @@ func (sectionL) LoadType(ctx context.Context, e boil.ContextExecutor, singular b
 		if object.R == nil {
 			object.R = &sectionR{}
 		}
-		if !queries.IsNil(object.TypeID) {
-			args = append(args, object.TypeID)
-		}
+		args = append(args, object.TypeID)
 
 	} else {
 	Outer:
@@ -1252,14 +1241,12 @@ func (sectionL) LoadType(ctx context.Context, e boil.ContextExecutor, singular b
 			}
 
 			for _, a := range args {
-				if queries.Equal(a, obj.TypeID) {
+				if a == obj.TypeID {
 					continue Outer
 				}
 			}
 
-			if !queries.IsNil(obj.TypeID) {
-				args = append(args, obj.TypeID)
-			}
+			args = append(args, obj.TypeID)
 
 		}
 	}
@@ -1317,7 +1304,7 @@ func (sectionL) LoadType(ctx context.Context, e boil.ContextExecutor, singular b
 
 	for _, local := range slice {
 		for _, foreign := range resultSlice {
-			if queries.Equal(local.TypeID, foreign.TypeID) {
+			if local.TypeID == foreign.TypeID {
 				local.R.Type = foreign
 				if foreign.R == nil {
 					foreign.R = &typeR{}
@@ -1331,9 +1318,9 @@ func (sectionL) LoadType(ctx context.Context, e boil.ContextExecutor, singular b
 	return nil
 }
 
-// LoadSectionTerm allows an eager lookup of values, cached into the
-// loaded structs of the objects. This is for a 1-1 relationship.
-func (sectionL) LoadSectionTerm(ctx context.Context, e boil.ContextExecutor, singular bool, maybeSection interface{}, mods queries.Applicator) error {
+// LoadTerms allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (sectionL) LoadTerms(ctx context.Context, e boil.ContextExecutor, singular bool, maybeSection interface{}, mods queries.Applicator) error {
 	var slice []*Section
 	var object *Section
 
@@ -1373,7 +1360,7 @@ func (sectionL) LoadSectionTerm(ctx context.Context, e boil.ContextExecutor, sin
 			}
 
 			for _, a := range args {
-				if a == obj.SectionID {
+				if queries.Equal(a, obj.SectionID) {
 					continue Outer
 				}
 			}
@@ -1387,8 +1374,8 @@ func (sectionL) LoadSectionTerm(ctx context.Context, e boil.ContextExecutor, sin
 	}
 
 	query := NewQuery(
-		qm.From(`section_terms`),
-		qm.WhereIn(`section_terms.section_id in ?`, args...),
+		qm.From(`terms`),
+		qm.WhereIn(`terms.section_id in ?`, args...),
 	)
 	if mods != nil {
 		mods.Apply(query)
@@ -1396,48 +1383,45 @@ func (sectionL) LoadSectionTerm(ctx context.Context, e boil.ContextExecutor, sin
 
 	results, err := query.QueryContext(ctx, e)
 	if err != nil {
-		return errors.Wrap(err, "failed to eager load SectionTerm")
+		return errors.Wrap(err, "failed to eager load terms")
 	}
 
-	var resultSlice []*SectionTerm
+	var resultSlice []*Term
 	if err = queries.Bind(results, &resultSlice); err != nil {
-		return errors.Wrap(err, "failed to bind eager loaded slice SectionTerm")
+		return errors.Wrap(err, "failed to bind eager loaded slice terms")
 	}
 
 	if err = results.Close(); err != nil {
-		return errors.Wrap(err, "failed to close results of eager load for section_terms")
+		return errors.Wrap(err, "failed to close results in eager load on terms")
 	}
 	if err = results.Err(); err != nil {
-		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for section_terms")
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for terms")
 	}
 
-	if len(sectionTermAfterSelectHooks) != 0 {
+	if len(termAfterSelectHooks) != 0 {
 		for _, obj := range resultSlice {
 			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
 				return err
 			}
 		}
 	}
-
-	if len(resultSlice) == 0 {
+	if singular {
+		object.R.Terms = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &termR{}
+			}
+			foreign.R.Section = object
+		}
 		return nil
 	}
 
-	if singular {
-		foreign := resultSlice[0]
-		object.R.SectionTerm = foreign
-		if foreign.R == nil {
-			foreign.R = &sectionTermR{}
-		}
-		foreign.R.Section = object
-	}
-
-	for _, local := range slice {
-		for _, foreign := range resultSlice {
-			if local.SectionID == foreign.SectionID {
-				local.R.SectionTerm = foreign
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if queries.Equal(local.SectionID, foreign.SectionID) {
+				local.R.Terms = append(local.R.Terms, foreign)
 				if foreign.R == nil {
-					foreign.R = &sectionTermR{}
+					foreign.R = &termR{}
 				}
 				foreign.R.Section = local
 				break
@@ -1445,86 +1429,6 @@ func (sectionL) LoadSectionTerm(ctx context.Context, e boil.ContextExecutor, sin
 		}
 	}
 
-	return nil
-}
-
-// SetBubble of the section to the related item.
-// Sets o.R.Bubble to related.
-// Adds o to related.R.Sections.
-func (o *Section) SetBubble(ctx context.Context, exec boil.ContextExecutor, insert bool, related *Bubble) error {
-	var err error
-	if insert {
-		if err = related.Insert(ctx, exec, boil.Infer()); err != nil {
-			return errors.Wrap(err, "failed to insert into foreign table")
-		}
-	}
-
-	updateQuery := fmt.Sprintf(
-		"UPDATE \"sections\" SET %s WHERE %s",
-		strmangle.SetParamNames("\"", "\"", 1, []string{"bubble_id"}),
-		strmangle.WhereClause("\"", "\"", 2, sectionPrimaryKeyColumns),
-	)
-	values := []interface{}{related.BubbleID, o.SectionID}
-
-	if boil.IsDebug(ctx) {
-		writer := boil.DebugWriterFrom(ctx)
-		fmt.Fprintln(writer, updateQuery)
-		fmt.Fprintln(writer, values)
-	}
-	if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
-		return errors.Wrap(err, "failed to update local table")
-	}
-
-	queries.Assign(&o.BubbleID, related.BubbleID)
-	if o.R == nil {
-		o.R = &sectionR{
-			Bubble: related,
-		}
-	} else {
-		o.R.Bubble = related
-	}
-
-	if related.R == nil {
-		related.R = &bubbleR{
-			Sections: SectionSlice{o},
-		}
-	} else {
-		related.R.Sections = append(related.R.Sections, o)
-	}
-
-	return nil
-}
-
-// RemoveBubble relationship.
-// Sets o.R.Bubble to nil.
-// Removes o from all passed in related items' relationships struct.
-func (o *Section) RemoveBubble(ctx context.Context, exec boil.ContextExecutor, related *Bubble) error {
-	var err error
-
-	queries.SetScanner(&o.BubbleID, nil)
-	if _, err = o.Update(ctx, exec, boil.Whitelist("bubble_id")); err != nil {
-		return errors.Wrap(err, "failed to update local table")
-	}
-
-	if o.R != nil {
-		o.R.Bubble = nil
-	}
-	if related == nil || related.R == nil {
-		return nil
-	}
-
-	for i, ri := range related.R.Sections {
-		if queries.Equal(o.BubbleID, ri.BubbleID) {
-			continue
-		}
-
-		ln := len(related.R.Sections)
-		if ln > 1 && i < ln-1 {
-			related.R.Sections[i] = related.R.Sections[ln-1]
-		}
-		related.R.Sections = related.R.Sections[:ln-1]
-		break
-	}
 	return nil
 }
 
@@ -1555,7 +1459,7 @@ func (o *Section) SetFont(ctx context.Context, exec boil.ContextExecutor, insert
 		return errors.Wrap(err, "failed to update local table")
 	}
 
-	queries.Assign(&o.FontID, related.FontID)
+	o.FontID = related.FontID
 	if o.R == nil {
 		o.R = &sectionR{
 			Font: related,
@@ -1575,36 +1479,50 @@ func (o *Section) SetFont(ctx context.Context, exec boil.ContextExecutor, insert
 	return nil
 }
 
-// RemoveFont relationship.
-// Sets o.R.Font to nil.
-// Removes o from all passed in related items' relationships struct.
-func (o *Section) RemoveFont(ctx context.Context, exec boil.ContextExecutor, related *Font) error {
+// SetFrameColor of the section to the related item.
+// Sets o.R.FrameColor to related.
+// Adds o to related.R.FrameColorSections.
+func (o *Section) SetFrameColor(ctx context.Context, exec boil.ContextExecutor, insert bool, related *Color) error {
 	var err error
+	if insert {
+		if err = related.Insert(ctx, exec, boil.Infer()); err != nil {
+			return errors.Wrap(err, "failed to insert into foreign table")
+		}
+	}
 
-	queries.SetScanner(&o.FontID, nil)
-	if _, err = o.Update(ctx, exec, boil.Whitelist("font_id")); err != nil {
+	updateQuery := fmt.Sprintf(
+		"UPDATE \"sections\" SET %s WHERE %s",
+		strmangle.SetParamNames("\"", "\"", 1, []string{"frame_color_id"}),
+		strmangle.WhereClause("\"", "\"", 2, sectionPrimaryKeyColumns),
+	)
+	values := []interface{}{related.ColorID, o.SectionID}
+
+	if boil.IsDebug(ctx) {
+		writer := boil.DebugWriterFrom(ctx)
+		fmt.Fprintln(writer, updateQuery)
+		fmt.Fprintln(writer, values)
+	}
+	if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
 		return errors.Wrap(err, "failed to update local table")
 	}
 
-	if o.R != nil {
-		o.R.Font = nil
-	}
-	if related == nil || related.R == nil {
-		return nil
+	o.FrameColorID = related.ColorID
+	if o.R == nil {
+		o.R = &sectionR{
+			FrameColor: related,
+		}
+	} else {
+		o.R.FrameColor = related
 	}
 
-	for i, ri := range related.R.Sections {
-		if queries.Equal(o.FontID, ri.FontID) {
-			continue
+	if related.R == nil {
+		related.R = &colorR{
+			FrameColorSections: SectionSlice{o},
 		}
-
-		ln := len(related.R.Sections)
-		if ln > 1 && i < ln-1 {
-			related.R.Sections[i] = related.R.Sections[ln-1]
-		}
-		related.R.Sections = related.R.Sections[:ln-1]
-		break
+	} else {
+		related.R.FrameColorSections = append(related.R.FrameColorSections, o)
 	}
+
 	return nil
 }
 
@@ -1735,10 +1653,10 @@ func (o *Section) SetPage(ctx context.Context, exec boil.ContextExecutor, insert
 	return nil
 }
 
-// SetPosition of the section to the related item.
-// Sets o.R.Position to related.
-// Adds o to related.R.Sections.
-func (o *Section) SetPosition(ctx context.Context, exec boil.ContextExecutor, insert bool, related *Position) error {
+// SetTextColor of the section to the related item.
+// Sets o.R.TextColor to related.
+// Adds o to related.R.TextColorSections.
+func (o *Section) SetTextColor(ctx context.Context, exec boil.ContextExecutor, insert bool, related *Color) error {
 	var err error
 	if insert {
 		if err = related.Insert(ctx, exec, boil.Infer()); err != nil {
@@ -1748,10 +1666,10 @@ func (o *Section) SetPosition(ctx context.Context, exec boil.ContextExecutor, in
 
 	updateQuery := fmt.Sprintf(
 		"UPDATE \"sections\" SET %s WHERE %s",
-		strmangle.SetParamNames("\"", "\"", 1, []string{"position_id"}),
+		strmangle.SetParamNames("\"", "\"", 1, []string{"text_color_id"}),
 		strmangle.WhereClause("\"", "\"", 2, sectionPrimaryKeyColumns),
 	)
-	values := []interface{}{related.PositionID, o.SectionID}
+	values := []interface{}{related.ColorID, o.SectionID}
 
 	if boil.IsDebug(ctx) {
 		writer := boil.DebugWriterFrom(ctx)
@@ -1762,56 +1680,23 @@ func (o *Section) SetPosition(ctx context.Context, exec boil.ContextExecutor, in
 		return errors.Wrap(err, "failed to update local table")
 	}
 
-	queries.Assign(&o.PositionID, related.PositionID)
+	o.TextColorID = related.ColorID
 	if o.R == nil {
 		o.R = &sectionR{
-			Position: related,
+			TextColor: related,
 		}
 	} else {
-		o.R.Position = related
+		o.R.TextColor = related
 	}
 
 	if related.R == nil {
-		related.R = &positionR{
-			Sections: SectionSlice{o},
+		related.R = &colorR{
+			TextColorSections: SectionSlice{o},
 		}
 	} else {
-		related.R.Sections = append(related.R.Sections, o)
+		related.R.TextColorSections = append(related.R.TextColorSections, o)
 	}
 
-	return nil
-}
-
-// RemovePosition relationship.
-// Sets o.R.Position to nil.
-// Removes o from all passed in related items' relationships struct.
-func (o *Section) RemovePosition(ctx context.Context, exec boil.ContextExecutor, related *Position) error {
-	var err error
-
-	queries.SetScanner(&o.PositionID, nil)
-	if _, err = o.Update(ctx, exec, boil.Whitelist("position_id")); err != nil {
-		return errors.Wrap(err, "failed to update local table")
-	}
-
-	if o.R != nil {
-		o.R.Position = nil
-	}
-	if related == nil || related.R == nil {
-		return nil
-	}
-
-	for i, ri := range related.R.Sections {
-		if queries.Equal(o.PositionID, ri.PositionID) {
-			continue
-		}
-
-		ln := len(related.R.Sections)
-		if ln > 1 && i < ln-1 {
-			related.R.Sections[i] = related.R.Sections[ln-1]
-		}
-		related.R.Sections = related.R.Sections[:ln-1]
-		break
-	}
 	return nil
 }
 
@@ -1842,7 +1727,7 @@ func (o *Section) SetType(ctx context.Context, exec boil.ContextExecutor, insert
 		return errors.Wrap(err, "failed to update local table")
 	}
 
-	queries.Assign(&o.TypeID, related.TypeID)
+	o.TypeID = related.TypeID
 	if o.R == nil {
 		o.R = &sectionR{
 			Type: related,
@@ -1862,86 +1747,130 @@ func (o *Section) SetType(ctx context.Context, exec boil.ContextExecutor, insert
 	return nil
 }
 
-// RemoveType relationship.
-// Sets o.R.Type to nil.
-// Removes o from all passed in related items' relationships struct.
-func (o *Section) RemoveType(ctx context.Context, exec boil.ContextExecutor, related *Type) error {
+// AddTerms adds the given related objects to the existing relationships
+// of the section, optionally inserting them as new records.
+// Appends related to o.R.Terms.
+// Sets related.R.Section appropriately.
+func (o *Section) AddTerms(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*Term) error {
 	var err error
+	for _, rel := range related {
+		if insert {
+			queries.Assign(&rel.SectionID, o.SectionID)
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"terms\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"section_id"}),
+				strmangle.WhereClause("\"", "\"", 2, termPrimaryKeyColumns),
+			)
+			values := []interface{}{o.SectionID, rel.TermID}
 
-	queries.SetScanner(&o.TypeID, nil)
-	if _, err = o.Update(ctx, exec, boil.Whitelist("type_id")); err != nil {
-		return errors.Wrap(err, "failed to update local table")
-	}
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
 
-	if o.R != nil {
-		o.R.Type = nil
-	}
-	if related == nil || related.R == nil {
-		return nil
-	}
-
-	for i, ri := range related.R.Sections {
-		if queries.Equal(o.TypeID, ri.TypeID) {
-			continue
+			queries.Assign(&rel.SectionID, o.SectionID)
 		}
-
-		ln := len(related.R.Sections)
-		if ln > 1 && i < ln-1 {
-			related.R.Sections[i] = related.R.Sections[ln-1]
-		}
-		related.R.Sections = related.R.Sections[:ln-1]
-		break
-	}
-	return nil
-}
-
-// SetSectionTerm of the section to the related item.
-// Sets o.R.SectionTerm to related.
-// Adds o to related.R.Section.
-func (o *Section) SetSectionTerm(ctx context.Context, exec boil.ContextExecutor, insert bool, related *SectionTerm) error {
-	var err error
-
-	if insert {
-		related.SectionID = o.SectionID
-
-		if err = related.Insert(ctx, exec, boil.Infer()); err != nil {
-			return errors.Wrap(err, "failed to insert into foreign table")
-		}
-	} else {
-		updateQuery := fmt.Sprintf(
-			"UPDATE \"section_terms\" SET %s WHERE %s",
-			strmangle.SetParamNames("\"", "\"", 1, []string{"section_id"}),
-			strmangle.WhereClause("\"", "\"", 2, sectionTermPrimaryKeyColumns),
-		)
-		values := []interface{}{o.SectionID, related.SectionTermID}
-
-		if boil.IsDebug(ctx) {
-			writer := boil.DebugWriterFrom(ctx)
-			fmt.Fprintln(writer, updateQuery)
-			fmt.Fprintln(writer, values)
-		}
-		if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
-			return errors.Wrap(err, "failed to update foreign table")
-		}
-
-		related.SectionID = o.SectionID
 	}
 
 	if o.R == nil {
 		o.R = &sectionR{
-			SectionTerm: related,
+			Terms: related,
 		}
 	} else {
-		o.R.SectionTerm = related
+		o.R.Terms = append(o.R.Terms, related...)
 	}
 
-	if related.R == nil {
-		related.R = &sectionTermR{
-			Section: o,
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &termR{
+				Section: o,
+			}
+		} else {
+			rel.R.Section = o
 		}
-	} else {
-		related.R.Section = o
 	}
+	return nil
+}
+
+// SetTerms removes all previously related items of the
+// section replacing them completely with the passed
+// in related items, optionally inserting them as new records.
+// Sets o.R.Section's Terms accordingly.
+// Replaces o.R.Terms with related.
+// Sets related.R.Section's Terms accordingly.
+func (o *Section) SetTerms(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*Term) error {
+	query := "update \"terms\" set \"section_id\" = null where \"section_id\" = $1"
+	values := []interface{}{o.SectionID}
+	if boil.IsDebug(ctx) {
+		writer := boil.DebugWriterFrom(ctx)
+		fmt.Fprintln(writer, query)
+		fmt.Fprintln(writer, values)
+	}
+	_, err := exec.ExecContext(ctx, query, values...)
+	if err != nil {
+		return errors.Wrap(err, "failed to remove relationships before set")
+	}
+
+	if o.R != nil {
+		for _, rel := range o.R.Terms {
+			queries.SetScanner(&rel.SectionID, nil)
+			if rel.R == nil {
+				continue
+			}
+
+			rel.R.Section = nil
+		}
+		o.R.Terms = nil
+	}
+
+	return o.AddTerms(ctx, exec, insert, related...)
+}
+
+// RemoveTerms relationships from objects passed in.
+// Removes related items from R.Terms (uses pointer comparison, removal does not keep order)
+// Sets related.R.Section.
+func (o *Section) RemoveTerms(ctx context.Context, exec boil.ContextExecutor, related ...*Term) error {
+	if len(related) == 0 {
+		return nil
+	}
+
+	var err error
+	for _, rel := range related {
+		queries.SetScanner(&rel.SectionID, nil)
+		if rel.R != nil {
+			rel.R.Section = nil
+		}
+		if _, err = rel.Update(ctx, exec, boil.Whitelist("section_id")); err != nil {
+			return err
+		}
+	}
+	if o.R == nil {
+		return nil
+	}
+
+	for _, rel := range related {
+		for i, ri := range o.R.Terms {
+			if rel != ri {
+				continue
+			}
+
+			ln := len(o.R.Terms)
+			if ln > 1 && i < ln-1 {
+				o.R.Terms[i] = o.R.Terms[ln-1]
+			}
+			o.R.Terms = o.R.Terms[:ln-1]
+			break
+		}
+	}
+
 	return nil
 }
 
@@ -1958,7 +1887,7 @@ func Sections(mods ...qm.QueryMod) sectionQuery {
 
 // FindSection retrieves a single record by ID with an executor.
 // If selectCols is empty Find will return all columns.
-func FindSection(ctx context.Context, exec boil.ContextExecutor, sectionID int, selectCols ...string) (*Section, error) {
+func FindSection(ctx context.Context, exec boil.ContextExecutor, sectionID int32, selectCols ...string) (*Section, error) {
 	sectionObj := &Section{}
 
 	sel := "*"
@@ -2481,7 +2410,7 @@ func (o *SectionSlice) ReloadAll(ctx context.Context, exec boil.ContextExecutor)
 }
 
 // SectionExists checks if the Section row exists.
-func SectionExists(ctx context.Context, exec boil.ContextExecutor, sectionID int) (bool, error) {
+func SectionExists(ctx context.Context, exec boil.ContextExecutor, sectionID int32) (bool, error) {
 	var exists bool
 	sql := "select exists(select 1 from \"sections\" where \"section_id\"=$1 limit 1)"
 

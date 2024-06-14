@@ -494,314 +494,6 @@ func testImagesInsertWhitelist(t *testing.T) {
 	}
 }
 
-func testImageToManyChapterTerms(t *testing.T) {
-	var err error
-	ctx := context.Background()
-	tx := MustTx(boil.BeginTx(ctx, nil))
-	defer func() { _ = tx.Rollback() }()
-
-	var a Image
-	var b, c ChapterTerm
-
-	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, imageDBTypes, true, imageColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Image struct: %s", err)
-	}
-
-	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	if err = randomize.Struct(seed, &b, chapterTermDBTypes, false, chapterTermColumnsWithDefault...); err != nil {
-		t.Fatal(err)
-	}
-	if err = randomize.Struct(seed, &c, chapterTermDBTypes, false, chapterTermColumnsWithDefault...); err != nil {
-		t.Fatal(err)
-	}
-
-	queries.Assign(&b.ImageID, a.ImageID)
-	queries.Assign(&c.ImageID, a.ImageID)
-	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	check, err := a.ChapterTerms().All(ctx, tx)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	bFound, cFound := false, false
-	for _, v := range check {
-		if queries.Equal(v.ImageID, b.ImageID) {
-			bFound = true
-		}
-		if queries.Equal(v.ImageID, c.ImageID) {
-			cFound = true
-		}
-	}
-
-	if !bFound {
-		t.Error("expected to find b")
-	}
-	if !cFound {
-		t.Error("expected to find c")
-	}
-
-	slice := ImageSlice{&a}
-	if err = a.L.LoadChapterTerms(ctx, tx, false, (*[]*Image)(&slice), nil); err != nil {
-		t.Fatal(err)
-	}
-	if got := len(a.R.ChapterTerms); got != 2 {
-		t.Error("number of eager loaded records wrong, got:", got)
-	}
-
-	a.R.ChapterTerms = nil
-	if err = a.L.LoadChapterTerms(ctx, tx, true, &a, nil); err != nil {
-		t.Fatal(err)
-	}
-	if got := len(a.R.ChapterTerms); got != 2 {
-		t.Error("number of eager loaded records wrong, got:", got)
-	}
-
-	if t.Failed() {
-		t.Logf("%#v", check)
-	}
-}
-
-func testImageToManyDynamicTerms(t *testing.T) {
-	var err error
-	ctx := context.Background()
-	tx := MustTx(boil.BeginTx(ctx, nil))
-	defer func() { _ = tx.Rollback() }()
-
-	var a Image
-	var b, c DynamicTerm
-
-	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, imageDBTypes, true, imageColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Image struct: %s", err)
-	}
-
-	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	if err = randomize.Struct(seed, &b, dynamicTermDBTypes, false, dynamicTermColumnsWithDefault...); err != nil {
-		t.Fatal(err)
-	}
-	if err = randomize.Struct(seed, &c, dynamicTermDBTypes, false, dynamicTermColumnsWithDefault...); err != nil {
-		t.Fatal(err)
-	}
-
-	queries.Assign(&b.ImageID, a.ImageID)
-	queries.Assign(&c.ImageID, a.ImageID)
-	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	check, err := a.DynamicTerms().All(ctx, tx)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	bFound, cFound := false, false
-	for _, v := range check {
-		if queries.Equal(v.ImageID, b.ImageID) {
-			bFound = true
-		}
-		if queries.Equal(v.ImageID, c.ImageID) {
-			cFound = true
-		}
-	}
-
-	if !bFound {
-		t.Error("expected to find b")
-	}
-	if !cFound {
-		t.Error("expected to find c")
-	}
-
-	slice := ImageSlice{&a}
-	if err = a.L.LoadDynamicTerms(ctx, tx, false, (*[]*Image)(&slice), nil); err != nil {
-		t.Fatal(err)
-	}
-	if got := len(a.R.DynamicTerms); got != 2 {
-		t.Error("number of eager loaded records wrong, got:", got)
-	}
-
-	a.R.DynamicTerms = nil
-	if err = a.L.LoadDynamicTerms(ctx, tx, true, &a, nil); err != nil {
-		t.Fatal(err)
-	}
-	if got := len(a.R.DynamicTerms); got != 2 {
-		t.Error("number of eager loaded records wrong, got:", got)
-	}
-
-	if t.Failed() {
-		t.Logf("%#v", check)
-	}
-}
-
-func testImageToManyPageTerms(t *testing.T) {
-	var err error
-	ctx := context.Background()
-	tx := MustTx(boil.BeginTx(ctx, nil))
-	defer func() { _ = tx.Rollback() }()
-
-	var a Image
-	var b, c PageTerm
-
-	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, imageDBTypes, true, imageColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Image struct: %s", err)
-	}
-
-	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	if err = randomize.Struct(seed, &b, pageTermDBTypes, false, pageTermColumnsWithDefault...); err != nil {
-		t.Fatal(err)
-	}
-	if err = randomize.Struct(seed, &c, pageTermDBTypes, false, pageTermColumnsWithDefault...); err != nil {
-		t.Fatal(err)
-	}
-
-	queries.Assign(&b.ImageID, a.ImageID)
-	queries.Assign(&c.ImageID, a.ImageID)
-	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	check, err := a.PageTerms().All(ctx, tx)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	bFound, cFound := false, false
-	for _, v := range check {
-		if queries.Equal(v.ImageID, b.ImageID) {
-			bFound = true
-		}
-		if queries.Equal(v.ImageID, c.ImageID) {
-			cFound = true
-		}
-	}
-
-	if !bFound {
-		t.Error("expected to find b")
-	}
-	if !cFound {
-		t.Error("expected to find c")
-	}
-
-	slice := ImageSlice{&a}
-	if err = a.L.LoadPageTerms(ctx, tx, false, (*[]*Image)(&slice), nil); err != nil {
-		t.Fatal(err)
-	}
-	if got := len(a.R.PageTerms); got != 2 {
-		t.Error("number of eager loaded records wrong, got:", got)
-	}
-
-	a.R.PageTerms = nil
-	if err = a.L.LoadPageTerms(ctx, tx, true, &a, nil); err != nil {
-		t.Fatal(err)
-	}
-	if got := len(a.R.PageTerms); got != 2 {
-		t.Error("number of eager loaded records wrong, got:", got)
-	}
-
-	if t.Failed() {
-		t.Logf("%#v", check)
-	}
-}
-
-func testImageToManySectionTerms(t *testing.T) {
-	var err error
-	ctx := context.Background()
-	tx := MustTx(boil.BeginTx(ctx, nil))
-	defer func() { _ = tx.Rollback() }()
-
-	var a Image
-	var b, c SectionTerm
-
-	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, imageDBTypes, true, imageColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Image struct: %s", err)
-	}
-
-	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	if err = randomize.Struct(seed, &b, sectionTermDBTypes, false, sectionTermColumnsWithDefault...); err != nil {
-		t.Fatal(err)
-	}
-	if err = randomize.Struct(seed, &c, sectionTermDBTypes, false, sectionTermColumnsWithDefault...); err != nil {
-		t.Fatal(err)
-	}
-
-	queries.Assign(&b.ImageID, a.ImageID)
-	queries.Assign(&c.ImageID, a.ImageID)
-	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	check, err := a.SectionTerms().All(ctx, tx)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	bFound, cFound := false, false
-	for _, v := range check {
-		if queries.Equal(v.ImageID, b.ImageID) {
-			bFound = true
-		}
-		if queries.Equal(v.ImageID, c.ImageID) {
-			cFound = true
-		}
-	}
-
-	if !bFound {
-		t.Error("expected to find b")
-	}
-	if !cFound {
-		t.Error("expected to find c")
-	}
-
-	slice := ImageSlice{&a}
-	if err = a.L.LoadSectionTerms(ctx, tx, false, (*[]*Image)(&slice), nil); err != nil {
-		t.Fatal(err)
-	}
-	if got := len(a.R.SectionTerms); got != 2 {
-		t.Error("number of eager loaded records wrong, got:", got)
-	}
-
-	a.R.SectionTerms = nil
-	if err = a.L.LoadSectionTerms(ctx, tx, true, &a, nil); err != nil {
-		t.Fatal(err)
-	}
-	if got := len(a.R.SectionTerms); got != 2 {
-		t.Error("number of eager loaded records wrong, got:", got)
-	}
-
-	if t.Failed() {
-		t.Logf("%#v", check)
-	}
-}
-
 func testImageToManySections(t *testing.T) {
 	var err error
 	ctx := context.Background()
@@ -879,30 +571,33 @@ func testImageToManySections(t *testing.T) {
 	}
 }
 
-func testImageToManyAddOpChapterTerms(t *testing.T) {
+func testImageToManyTerms(t *testing.T) {
 	var err error
-
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
 
 	var a Image
-	var b, c, d, e ChapterTerm
+	var b, c Term
 
 	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, imageDBTypes, false, strmangle.SetComplement(imagePrimaryKeyColumns, imageColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-	foreigners := []*ChapterTerm{&b, &c, &d, &e}
-	for _, x := range foreigners {
-		if err = randomize.Struct(seed, x, chapterTermDBTypes, false, strmangle.SetComplement(chapterTermPrimaryKeyColumns, chapterTermColumnsWithoutDefault)...); err != nil {
-			t.Fatal(err)
-		}
+	if err = randomize.Struct(seed, &a, imageDBTypes, true, imageColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Image struct: %s", err)
 	}
 
 	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Fatal(err)
 	}
+
+	if err = randomize.Struct(seed, &b, termDBTypes, false, termColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &c, termDBTypes, false, termColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+
+	queries.Assign(&b.ImageID, a.ImageID)
+	queries.Assign(&c.ImageID, a.ImageID)
 	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Fatal(err)
 	}
@@ -910,976 +605,46 @@ func testImageToManyAddOpChapterTerms(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	foreignersSplitByInsertion := [][]*ChapterTerm{
-		{&b, &c},
-		{&d, &e},
-	}
-
-	for i, x := range foreignersSplitByInsertion {
-		err = a.AddChapterTerms(ctx, tx, i != 0, x...)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		first := x[0]
-		second := x[1]
-
-		if !queries.Equal(a.ImageID, first.ImageID) {
-			t.Error("foreign key was wrong value", a.ImageID, first.ImageID)
-		}
-		if !queries.Equal(a.ImageID, second.ImageID) {
-			t.Error("foreign key was wrong value", a.ImageID, second.ImageID)
-		}
-
-		if first.R.Image != &a {
-			t.Error("relationship was not added properly to the foreign slice")
-		}
-		if second.R.Image != &a {
-			t.Error("relationship was not added properly to the foreign slice")
-		}
-
-		if a.R.ChapterTerms[i*2] != first {
-			t.Error("relationship struct slice not set to correct value")
-		}
-		if a.R.ChapterTerms[i*2+1] != second {
-			t.Error("relationship struct slice not set to correct value")
-		}
-
-		count, err := a.ChapterTerms().Count(ctx, tx)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if want := int64((i + 1) * 2); count != want {
-			t.Error("want", want, "got", count)
-		}
-	}
-}
-
-func testImageToManySetOpChapterTerms(t *testing.T) {
-	var err error
-
-	ctx := context.Background()
-	tx := MustTx(boil.BeginTx(ctx, nil))
-	defer func() { _ = tx.Rollback() }()
-
-	var a Image
-	var b, c, d, e ChapterTerm
-
-	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, imageDBTypes, false, strmangle.SetComplement(imagePrimaryKeyColumns, imageColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-	foreigners := []*ChapterTerm{&b, &c, &d, &e}
-	for _, x := range foreigners {
-		if err = randomize.Struct(seed, x, chapterTermDBTypes, false, strmangle.SetComplement(chapterTermPrimaryKeyColumns, chapterTermColumnsWithoutDefault)...); err != nil {
-			t.Fatal(err)
-		}
-	}
-
-	if err = a.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	err = a.SetChapterTerms(ctx, tx, false, &b, &c)
+	check, err := a.Terms().All(ctx, tx)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	count, err := a.ChapterTerms().Count(ctx, tx)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if count != 2 {
-		t.Error("count was wrong:", count)
-	}
-
-	err = a.SetChapterTerms(ctx, tx, true, &d, &e)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	count, err = a.ChapterTerms().Count(ctx, tx)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if count != 2 {
-		t.Error("count was wrong:", count)
-	}
-
-	if !queries.IsValuerNil(b.ImageID) {
-		t.Error("want b's foreign key value to be nil")
-	}
-	if !queries.IsValuerNil(c.ImageID) {
-		t.Error("want c's foreign key value to be nil")
-	}
-	if !queries.Equal(a.ImageID, d.ImageID) {
-		t.Error("foreign key was wrong value", a.ImageID, d.ImageID)
-	}
-	if !queries.Equal(a.ImageID, e.ImageID) {
-		t.Error("foreign key was wrong value", a.ImageID, e.ImageID)
-	}
-
-	if b.R.Image != nil {
-		t.Error("relationship was not removed properly from the foreign struct")
-	}
-	if c.R.Image != nil {
-		t.Error("relationship was not removed properly from the foreign struct")
-	}
-	if d.R.Image != &a {
-		t.Error("relationship was not added properly to the foreign struct")
-	}
-	if e.R.Image != &a {
-		t.Error("relationship was not added properly to the foreign struct")
-	}
-
-	if a.R.ChapterTerms[0] != &d {
-		t.Error("relationship struct slice not set to correct value")
-	}
-	if a.R.ChapterTerms[1] != &e {
-		t.Error("relationship struct slice not set to correct value")
-	}
-}
-
-func testImageToManyRemoveOpChapterTerms(t *testing.T) {
-	var err error
-
-	ctx := context.Background()
-	tx := MustTx(boil.BeginTx(ctx, nil))
-	defer func() { _ = tx.Rollback() }()
-
-	var a Image
-	var b, c, d, e ChapterTerm
-
-	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, imageDBTypes, false, strmangle.SetComplement(imagePrimaryKeyColumns, imageColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-	foreigners := []*ChapterTerm{&b, &c, &d, &e}
-	for _, x := range foreigners {
-		if err = randomize.Struct(seed, x, chapterTermDBTypes, false, strmangle.SetComplement(chapterTermPrimaryKeyColumns, chapterTermColumnsWithoutDefault)...); err != nil {
-			t.Fatal(err)
+	bFound, cFound := false, false
+	for _, v := range check {
+		if queries.Equal(v.ImageID, b.ImageID) {
+			bFound = true
+		}
+		if queries.Equal(v.ImageID, c.ImageID) {
+			cFound = true
 		}
 	}
 
-	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+	if !bFound {
+		t.Error("expected to find b")
+	}
+	if !cFound {
+		t.Error("expected to find c")
+	}
+
+	slice := ImageSlice{&a}
+	if err = a.L.LoadTerms(ctx, tx, false, (*[]*Image)(&slice), nil); err != nil {
 		t.Fatal(err)
 	}
+	if got := len(a.R.Terms); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
 
-	err = a.AddChapterTerms(ctx, tx, true, foreigners...)
-	if err != nil {
+	a.R.Terms = nil
+	if err = a.L.LoadTerms(ctx, tx, true, &a, nil); err != nil {
 		t.Fatal(err)
 	}
-
-	count, err := a.ChapterTerms().Count(ctx, tx)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if count != 4 {
-		t.Error("count was wrong:", count)
-	}
-
-	err = a.RemoveChapterTerms(ctx, tx, foreigners[:2]...)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	count, err = a.ChapterTerms().Count(ctx, tx)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if count != 2 {
-		t.Error("count was wrong:", count)
-	}
-
-	if !queries.IsValuerNil(b.ImageID) {
-		t.Error("want b's foreign key value to be nil")
-	}
-	if !queries.IsValuerNil(c.ImageID) {
-		t.Error("want c's foreign key value to be nil")
-	}
-
-	if b.R.Image != nil {
-		t.Error("relationship was not removed properly from the foreign struct")
-	}
-	if c.R.Image != nil {
-		t.Error("relationship was not removed properly from the foreign struct")
-	}
-	if d.R.Image != &a {
-		t.Error("relationship to a should have been preserved")
-	}
-	if e.R.Image != &a {
-		t.Error("relationship to a should have been preserved")
-	}
-
-	if len(a.R.ChapterTerms) != 2 {
-		t.Error("should have preserved two relationships")
-	}
-
-	// Removal doesn't do a stable deletion for performance so we have to flip the order
-	if a.R.ChapterTerms[1] != &d {
-		t.Error("relationship to d should have been preserved")
-	}
-	if a.R.ChapterTerms[0] != &e {
-		t.Error("relationship to e should have been preserved")
-	}
-}
-
-func testImageToManyAddOpDynamicTerms(t *testing.T) {
-	var err error
-
-	ctx := context.Background()
-	tx := MustTx(boil.BeginTx(ctx, nil))
-	defer func() { _ = tx.Rollback() }()
-
-	var a Image
-	var b, c, d, e DynamicTerm
-
-	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, imageDBTypes, false, strmangle.SetComplement(imagePrimaryKeyColumns, imageColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-	foreigners := []*DynamicTerm{&b, &c, &d, &e}
-	for _, x := range foreigners {
-		if err = randomize.Struct(seed, x, dynamicTermDBTypes, false, strmangle.SetComplement(dynamicTermPrimaryKeyColumns, dynamicTermColumnsWithoutDefault)...); err != nil {
-			t.Fatal(err)
-		}
-	}
-
-	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	foreignersSplitByInsertion := [][]*DynamicTerm{
-		{&b, &c},
-		{&d, &e},
-	}
-
-	for i, x := range foreignersSplitByInsertion {
-		err = a.AddDynamicTerms(ctx, tx, i != 0, x...)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		first := x[0]
-		second := x[1]
-
-		if !queries.Equal(a.ImageID, first.ImageID) {
-			t.Error("foreign key was wrong value", a.ImageID, first.ImageID)
-		}
-		if !queries.Equal(a.ImageID, second.ImageID) {
-			t.Error("foreign key was wrong value", a.ImageID, second.ImageID)
-		}
-
-		if first.R.Image != &a {
-			t.Error("relationship was not added properly to the foreign slice")
-		}
-		if second.R.Image != &a {
-			t.Error("relationship was not added properly to the foreign slice")
-		}
-
-		if a.R.DynamicTerms[i*2] != first {
-			t.Error("relationship struct slice not set to correct value")
-		}
-		if a.R.DynamicTerms[i*2+1] != second {
-			t.Error("relationship struct slice not set to correct value")
-		}
-
-		count, err := a.DynamicTerms().Count(ctx, tx)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if want := int64((i + 1) * 2); count != want {
-			t.Error("want", want, "got", count)
-		}
-	}
-}
-
-func testImageToManySetOpDynamicTerms(t *testing.T) {
-	var err error
-
-	ctx := context.Background()
-	tx := MustTx(boil.BeginTx(ctx, nil))
-	defer func() { _ = tx.Rollback() }()
-
-	var a Image
-	var b, c, d, e DynamicTerm
-
-	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, imageDBTypes, false, strmangle.SetComplement(imagePrimaryKeyColumns, imageColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-	foreigners := []*DynamicTerm{&b, &c, &d, &e}
-	for _, x := range foreigners {
-		if err = randomize.Struct(seed, x, dynamicTermDBTypes, false, strmangle.SetComplement(dynamicTermPrimaryKeyColumns, dynamicTermColumnsWithoutDefault)...); err != nil {
-			t.Fatal(err)
-		}
-	}
-
-	if err = a.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	err = a.SetDynamicTerms(ctx, tx, false, &b, &c)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	count, err := a.DynamicTerms().Count(ctx, tx)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if count != 2 {
-		t.Error("count was wrong:", count)
-	}
-
-	err = a.SetDynamicTerms(ctx, tx, true, &d, &e)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	count, err = a.DynamicTerms().Count(ctx, tx)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if count != 2 {
-		t.Error("count was wrong:", count)
-	}
-
-	if !queries.IsValuerNil(b.ImageID) {
-		t.Error("want b's foreign key value to be nil")
-	}
-	if !queries.IsValuerNil(c.ImageID) {
-		t.Error("want c's foreign key value to be nil")
-	}
-	if !queries.Equal(a.ImageID, d.ImageID) {
-		t.Error("foreign key was wrong value", a.ImageID, d.ImageID)
-	}
-	if !queries.Equal(a.ImageID, e.ImageID) {
-		t.Error("foreign key was wrong value", a.ImageID, e.ImageID)
-	}
-
-	if b.R.Image != nil {
-		t.Error("relationship was not removed properly from the foreign struct")
-	}
-	if c.R.Image != nil {
-		t.Error("relationship was not removed properly from the foreign struct")
-	}
-	if d.R.Image != &a {
-		t.Error("relationship was not added properly to the foreign struct")
-	}
-	if e.R.Image != &a {
-		t.Error("relationship was not added properly to the foreign struct")
-	}
-
-	if a.R.DynamicTerms[0] != &d {
-		t.Error("relationship struct slice not set to correct value")
-	}
-	if a.R.DynamicTerms[1] != &e {
-		t.Error("relationship struct slice not set to correct value")
-	}
-}
-
-func testImageToManyRemoveOpDynamicTerms(t *testing.T) {
-	var err error
-
-	ctx := context.Background()
-	tx := MustTx(boil.BeginTx(ctx, nil))
-	defer func() { _ = tx.Rollback() }()
-
-	var a Image
-	var b, c, d, e DynamicTerm
-
-	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, imageDBTypes, false, strmangle.SetComplement(imagePrimaryKeyColumns, imageColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-	foreigners := []*DynamicTerm{&b, &c, &d, &e}
-	for _, x := range foreigners {
-		if err = randomize.Struct(seed, x, dynamicTermDBTypes, false, strmangle.SetComplement(dynamicTermPrimaryKeyColumns, dynamicTermColumnsWithoutDefault)...); err != nil {
-			t.Fatal(err)
-		}
-	}
-
-	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	err = a.AddDynamicTerms(ctx, tx, true, foreigners...)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	count, err := a.DynamicTerms().Count(ctx, tx)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if count != 4 {
-		t.Error("count was wrong:", count)
-	}
-
-	err = a.RemoveDynamicTerms(ctx, tx, foreigners[:2]...)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	count, err = a.DynamicTerms().Count(ctx, tx)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if count != 2 {
-		t.Error("count was wrong:", count)
-	}
-
-	if !queries.IsValuerNil(b.ImageID) {
-		t.Error("want b's foreign key value to be nil")
-	}
-	if !queries.IsValuerNil(c.ImageID) {
-		t.Error("want c's foreign key value to be nil")
-	}
-
-	if b.R.Image != nil {
-		t.Error("relationship was not removed properly from the foreign struct")
-	}
-	if c.R.Image != nil {
-		t.Error("relationship was not removed properly from the foreign struct")
-	}
-	if d.R.Image != &a {
-		t.Error("relationship to a should have been preserved")
-	}
-	if e.R.Image != &a {
-		t.Error("relationship to a should have been preserved")
-	}
-
-	if len(a.R.DynamicTerms) != 2 {
-		t.Error("should have preserved two relationships")
-	}
-
-	// Removal doesn't do a stable deletion for performance so we have to flip the order
-	if a.R.DynamicTerms[1] != &d {
-		t.Error("relationship to d should have been preserved")
-	}
-	if a.R.DynamicTerms[0] != &e {
-		t.Error("relationship to e should have been preserved")
-	}
-}
-
-func testImageToManyAddOpPageTerms(t *testing.T) {
-	var err error
-
-	ctx := context.Background()
-	tx := MustTx(boil.BeginTx(ctx, nil))
-	defer func() { _ = tx.Rollback() }()
-
-	var a Image
-	var b, c, d, e PageTerm
-
-	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, imageDBTypes, false, strmangle.SetComplement(imagePrimaryKeyColumns, imageColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-	foreigners := []*PageTerm{&b, &c, &d, &e}
-	for _, x := range foreigners {
-		if err = randomize.Struct(seed, x, pageTermDBTypes, false, strmangle.SetComplement(pageTermPrimaryKeyColumns, pageTermColumnsWithoutDefault)...); err != nil {
-			t.Fatal(err)
-		}
-	}
-
-	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	foreignersSplitByInsertion := [][]*PageTerm{
-		{&b, &c},
-		{&d, &e},
-	}
-
-	for i, x := range foreignersSplitByInsertion {
-		err = a.AddPageTerms(ctx, tx, i != 0, x...)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		first := x[0]
-		second := x[1]
-
-		if !queries.Equal(a.ImageID, first.ImageID) {
-			t.Error("foreign key was wrong value", a.ImageID, first.ImageID)
-		}
-		if !queries.Equal(a.ImageID, second.ImageID) {
-			t.Error("foreign key was wrong value", a.ImageID, second.ImageID)
-		}
-
-		if first.R.Image != &a {
-			t.Error("relationship was not added properly to the foreign slice")
-		}
-		if second.R.Image != &a {
-			t.Error("relationship was not added properly to the foreign slice")
-		}
-
-		if a.R.PageTerms[i*2] != first {
-			t.Error("relationship struct slice not set to correct value")
-		}
-		if a.R.PageTerms[i*2+1] != second {
-			t.Error("relationship struct slice not set to correct value")
-		}
-
-		count, err := a.PageTerms().Count(ctx, tx)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if want := int64((i + 1) * 2); count != want {
-			t.Error("want", want, "got", count)
-		}
-	}
-}
-
-func testImageToManySetOpPageTerms(t *testing.T) {
-	var err error
-
-	ctx := context.Background()
-	tx := MustTx(boil.BeginTx(ctx, nil))
-	defer func() { _ = tx.Rollback() }()
-
-	var a Image
-	var b, c, d, e PageTerm
-
-	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, imageDBTypes, false, strmangle.SetComplement(imagePrimaryKeyColumns, imageColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-	foreigners := []*PageTerm{&b, &c, &d, &e}
-	for _, x := range foreigners {
-		if err = randomize.Struct(seed, x, pageTermDBTypes, false, strmangle.SetComplement(pageTermPrimaryKeyColumns, pageTermColumnsWithoutDefault)...); err != nil {
-			t.Fatal(err)
-		}
-	}
-
-	if err = a.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	err = a.SetPageTerms(ctx, tx, false, &b, &c)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	count, err := a.PageTerms().Count(ctx, tx)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if count != 2 {
-		t.Error("count was wrong:", count)
-	}
-
-	err = a.SetPageTerms(ctx, tx, true, &d, &e)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	count, err = a.PageTerms().Count(ctx, tx)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if count != 2 {
-		t.Error("count was wrong:", count)
-	}
-
-	if !queries.IsValuerNil(b.ImageID) {
-		t.Error("want b's foreign key value to be nil")
-	}
-	if !queries.IsValuerNil(c.ImageID) {
-		t.Error("want c's foreign key value to be nil")
-	}
-	if !queries.Equal(a.ImageID, d.ImageID) {
-		t.Error("foreign key was wrong value", a.ImageID, d.ImageID)
-	}
-	if !queries.Equal(a.ImageID, e.ImageID) {
-		t.Error("foreign key was wrong value", a.ImageID, e.ImageID)
-	}
-
-	if b.R.Image != nil {
-		t.Error("relationship was not removed properly from the foreign struct")
-	}
-	if c.R.Image != nil {
-		t.Error("relationship was not removed properly from the foreign struct")
-	}
-	if d.R.Image != &a {
-		t.Error("relationship was not added properly to the foreign struct")
-	}
-	if e.R.Image != &a {
-		t.Error("relationship was not added properly to the foreign struct")
-	}
-
-	if a.R.PageTerms[0] != &d {
-		t.Error("relationship struct slice not set to correct value")
-	}
-	if a.R.PageTerms[1] != &e {
-		t.Error("relationship struct slice not set to correct value")
-	}
-}
-
-func testImageToManyRemoveOpPageTerms(t *testing.T) {
-	var err error
-
-	ctx := context.Background()
-	tx := MustTx(boil.BeginTx(ctx, nil))
-	defer func() { _ = tx.Rollback() }()
-
-	var a Image
-	var b, c, d, e PageTerm
-
-	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, imageDBTypes, false, strmangle.SetComplement(imagePrimaryKeyColumns, imageColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-	foreigners := []*PageTerm{&b, &c, &d, &e}
-	for _, x := range foreigners {
-		if err = randomize.Struct(seed, x, pageTermDBTypes, false, strmangle.SetComplement(pageTermPrimaryKeyColumns, pageTermColumnsWithoutDefault)...); err != nil {
-			t.Fatal(err)
-		}
-	}
-
-	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	err = a.AddPageTerms(ctx, tx, true, foreigners...)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	count, err := a.PageTerms().Count(ctx, tx)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if count != 4 {
-		t.Error("count was wrong:", count)
-	}
-
-	err = a.RemovePageTerms(ctx, tx, foreigners[:2]...)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	count, err = a.PageTerms().Count(ctx, tx)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if count != 2 {
-		t.Error("count was wrong:", count)
-	}
-
-	if !queries.IsValuerNil(b.ImageID) {
-		t.Error("want b's foreign key value to be nil")
-	}
-	if !queries.IsValuerNil(c.ImageID) {
-		t.Error("want c's foreign key value to be nil")
-	}
-
-	if b.R.Image != nil {
-		t.Error("relationship was not removed properly from the foreign struct")
-	}
-	if c.R.Image != nil {
-		t.Error("relationship was not removed properly from the foreign struct")
-	}
-	if d.R.Image != &a {
-		t.Error("relationship to a should have been preserved")
-	}
-	if e.R.Image != &a {
-		t.Error("relationship to a should have been preserved")
-	}
-
-	if len(a.R.PageTerms) != 2 {
-		t.Error("should have preserved two relationships")
-	}
-
-	// Removal doesn't do a stable deletion for performance so we have to flip the order
-	if a.R.PageTerms[1] != &d {
-		t.Error("relationship to d should have been preserved")
-	}
-	if a.R.PageTerms[0] != &e {
-		t.Error("relationship to e should have been preserved")
-	}
-}
-
-func testImageToManyAddOpSectionTerms(t *testing.T) {
-	var err error
-
-	ctx := context.Background()
-	tx := MustTx(boil.BeginTx(ctx, nil))
-	defer func() { _ = tx.Rollback() }()
-
-	var a Image
-	var b, c, d, e SectionTerm
-
-	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, imageDBTypes, false, strmangle.SetComplement(imagePrimaryKeyColumns, imageColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-	foreigners := []*SectionTerm{&b, &c, &d, &e}
-	for _, x := range foreigners {
-		if err = randomize.Struct(seed, x, sectionTermDBTypes, false, strmangle.SetComplement(sectionTermPrimaryKeyColumns, sectionTermColumnsWithoutDefault)...); err != nil {
-			t.Fatal(err)
-		}
-	}
-
-	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	foreignersSplitByInsertion := [][]*SectionTerm{
-		{&b, &c},
-		{&d, &e},
-	}
-
-	for i, x := range foreignersSplitByInsertion {
-		err = a.AddSectionTerms(ctx, tx, i != 0, x...)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		first := x[0]
-		second := x[1]
-
-		if !queries.Equal(a.ImageID, first.ImageID) {
-			t.Error("foreign key was wrong value", a.ImageID, first.ImageID)
-		}
-		if !queries.Equal(a.ImageID, second.ImageID) {
-			t.Error("foreign key was wrong value", a.ImageID, second.ImageID)
-		}
-
-		if first.R.Image != &a {
-			t.Error("relationship was not added properly to the foreign slice")
-		}
-		if second.R.Image != &a {
-			t.Error("relationship was not added properly to the foreign slice")
-		}
-
-		if a.R.SectionTerms[i*2] != first {
-			t.Error("relationship struct slice not set to correct value")
-		}
-		if a.R.SectionTerms[i*2+1] != second {
-			t.Error("relationship struct slice not set to correct value")
-		}
-
-		count, err := a.SectionTerms().Count(ctx, tx)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if want := int64((i + 1) * 2); count != want {
-			t.Error("want", want, "got", count)
-		}
-	}
-}
-
-func testImageToManySetOpSectionTerms(t *testing.T) {
-	var err error
-
-	ctx := context.Background()
-	tx := MustTx(boil.BeginTx(ctx, nil))
-	defer func() { _ = tx.Rollback() }()
-
-	var a Image
-	var b, c, d, e SectionTerm
-
-	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, imageDBTypes, false, strmangle.SetComplement(imagePrimaryKeyColumns, imageColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-	foreigners := []*SectionTerm{&b, &c, &d, &e}
-	for _, x := range foreigners {
-		if err = randomize.Struct(seed, x, sectionTermDBTypes, false, strmangle.SetComplement(sectionTermPrimaryKeyColumns, sectionTermColumnsWithoutDefault)...); err != nil {
-			t.Fatal(err)
-		}
-	}
-
-	if err = a.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	err = a.SetSectionTerms(ctx, tx, false, &b, &c)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	count, err := a.SectionTerms().Count(ctx, tx)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if count != 2 {
-		t.Error("count was wrong:", count)
-	}
-
-	err = a.SetSectionTerms(ctx, tx, true, &d, &e)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	count, err = a.SectionTerms().Count(ctx, tx)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if count != 2 {
-		t.Error("count was wrong:", count)
-	}
-
-	if !queries.IsValuerNil(b.ImageID) {
-		t.Error("want b's foreign key value to be nil")
-	}
-	if !queries.IsValuerNil(c.ImageID) {
-		t.Error("want c's foreign key value to be nil")
-	}
-	if !queries.Equal(a.ImageID, d.ImageID) {
-		t.Error("foreign key was wrong value", a.ImageID, d.ImageID)
-	}
-	if !queries.Equal(a.ImageID, e.ImageID) {
-		t.Error("foreign key was wrong value", a.ImageID, e.ImageID)
-	}
-
-	if b.R.Image != nil {
-		t.Error("relationship was not removed properly from the foreign struct")
-	}
-	if c.R.Image != nil {
-		t.Error("relationship was not removed properly from the foreign struct")
+	if got := len(a.R.Terms); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
 	}
-	if d.R.Image != &a {
-		t.Error("relationship was not added properly to the foreign struct")
-	}
-	if e.R.Image != &a {
-		t.Error("relationship was not added properly to the foreign struct")
-	}
-
-	if a.R.SectionTerms[0] != &d {
-		t.Error("relationship struct slice not set to correct value")
-	}
-	if a.R.SectionTerms[1] != &e {
-		t.Error("relationship struct slice not set to correct value")
-	}
-}
-
-func testImageToManyRemoveOpSectionTerms(t *testing.T) {
-	var err error
-
-	ctx := context.Background()
-	tx := MustTx(boil.BeginTx(ctx, nil))
-	defer func() { _ = tx.Rollback() }()
-
-	var a Image
-	var b, c, d, e SectionTerm
-
-	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, imageDBTypes, false, strmangle.SetComplement(imagePrimaryKeyColumns, imageColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-	foreigners := []*SectionTerm{&b, &c, &d, &e}
-	for _, x := range foreigners {
-		if err = randomize.Struct(seed, x, sectionTermDBTypes, false, strmangle.SetComplement(sectionTermPrimaryKeyColumns, sectionTermColumnsWithoutDefault)...); err != nil {
-			t.Fatal(err)
-		}
-	}
-
-	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	err = a.AddSectionTerms(ctx, tx, true, foreigners...)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	count, err := a.SectionTerms().Count(ctx, tx)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if count != 4 {
-		t.Error("count was wrong:", count)
-	}
-
-	err = a.RemoveSectionTerms(ctx, tx, foreigners[:2]...)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	count, err = a.SectionTerms().Count(ctx, tx)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if count != 2 {
-		t.Error("count was wrong:", count)
-	}
-
-	if !queries.IsValuerNil(b.ImageID) {
-		t.Error("want b's foreign key value to be nil")
-	}
-	if !queries.IsValuerNil(c.ImageID) {
-		t.Error("want c's foreign key value to be nil")
-	}
-
-	if b.R.Image != nil {
-		t.Error("relationship was not removed properly from the foreign struct")
-	}
-	if c.R.Image != nil {
-		t.Error("relationship was not removed properly from the foreign struct")
-	}
-	if d.R.Image != &a {
-		t.Error("relationship to a should have been preserved")
-	}
-	if e.R.Image != &a {
-		t.Error("relationship to a should have been preserved")
-	}
 
-	if len(a.R.SectionTerms) != 2 {
-		t.Error("should have preserved two relationships")
-	}
-
-	// Removal doesn't do a stable deletion for performance so we have to flip the order
-	if a.R.SectionTerms[1] != &d {
-		t.Error("relationship to d should have been preserved")
-	}
-	if a.R.SectionTerms[0] != &e {
-		t.Error("relationship to e should have been preserved")
+	if t.Failed() {
+		t.Logf("%#v", check)
 	}
 }
 
@@ -2130,6 +895,257 @@ func testImageToManyRemoveOpSections(t *testing.T) {
 		t.Error("relationship to d should have been preserved")
 	}
 	if a.R.Sections[0] != &e {
+		t.Error("relationship to e should have been preserved")
+	}
+}
+
+func testImageToManyAddOpTerms(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a Image
+	var b, c, d, e Term
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, imageDBTypes, false, strmangle.SetComplement(imagePrimaryKeyColumns, imageColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*Term{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, termDBTypes, false, strmangle.SetComplement(termPrimaryKeyColumns, termColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	foreignersSplitByInsertion := [][]*Term{
+		{&b, &c},
+		{&d, &e},
+	}
+
+	for i, x := range foreignersSplitByInsertion {
+		err = a.AddTerms(ctx, tx, i != 0, x...)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		first := x[0]
+		second := x[1]
+
+		if !queries.Equal(a.ImageID, first.ImageID) {
+			t.Error("foreign key was wrong value", a.ImageID, first.ImageID)
+		}
+		if !queries.Equal(a.ImageID, second.ImageID) {
+			t.Error("foreign key was wrong value", a.ImageID, second.ImageID)
+		}
+
+		if first.R.Image != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+		if second.R.Image != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+
+		if a.R.Terms[i*2] != first {
+			t.Error("relationship struct slice not set to correct value")
+		}
+		if a.R.Terms[i*2+1] != second {
+			t.Error("relationship struct slice not set to correct value")
+		}
+
+		count, err := a.Terms().Count(ctx, tx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if want := int64((i + 1) * 2); count != want {
+			t.Error("want", want, "got", count)
+		}
+	}
+}
+
+func testImageToManySetOpTerms(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a Image
+	var b, c, d, e Term
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, imageDBTypes, false, strmangle.SetComplement(imagePrimaryKeyColumns, imageColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*Term{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, termDBTypes, false, strmangle.SetComplement(termPrimaryKeyColumns, termColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err = a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	err = a.SetTerms(ctx, tx, false, &b, &c)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err := a.Terms().Count(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 2 {
+		t.Error("count was wrong:", count)
+	}
+
+	err = a.SetTerms(ctx, tx, true, &d, &e)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err = a.Terms().Count(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 2 {
+		t.Error("count was wrong:", count)
+	}
+
+	if !queries.IsValuerNil(b.ImageID) {
+		t.Error("want b's foreign key value to be nil")
+	}
+	if !queries.IsValuerNil(c.ImageID) {
+		t.Error("want c's foreign key value to be nil")
+	}
+	if !queries.Equal(a.ImageID, d.ImageID) {
+		t.Error("foreign key was wrong value", a.ImageID, d.ImageID)
+	}
+	if !queries.Equal(a.ImageID, e.ImageID) {
+		t.Error("foreign key was wrong value", a.ImageID, e.ImageID)
+	}
+
+	if b.R.Image != nil {
+		t.Error("relationship was not removed properly from the foreign struct")
+	}
+	if c.R.Image != nil {
+		t.Error("relationship was not removed properly from the foreign struct")
+	}
+	if d.R.Image != &a {
+		t.Error("relationship was not added properly to the foreign struct")
+	}
+	if e.R.Image != &a {
+		t.Error("relationship was not added properly to the foreign struct")
+	}
+
+	if a.R.Terms[0] != &d {
+		t.Error("relationship struct slice not set to correct value")
+	}
+	if a.R.Terms[1] != &e {
+		t.Error("relationship struct slice not set to correct value")
+	}
+}
+
+func testImageToManyRemoveOpTerms(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a Image
+	var b, c, d, e Term
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, imageDBTypes, false, strmangle.SetComplement(imagePrimaryKeyColumns, imageColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*Term{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, termDBTypes, false, strmangle.SetComplement(termPrimaryKeyColumns, termColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	err = a.AddTerms(ctx, tx, true, foreigners...)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err := a.Terms().Count(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 4 {
+		t.Error("count was wrong:", count)
+	}
+
+	err = a.RemoveTerms(ctx, tx, foreigners[:2]...)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err = a.Terms().Count(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 2 {
+		t.Error("count was wrong:", count)
+	}
+
+	if !queries.IsValuerNil(b.ImageID) {
+		t.Error("want b's foreign key value to be nil")
+	}
+	if !queries.IsValuerNil(c.ImageID) {
+		t.Error("want c's foreign key value to be nil")
+	}
+
+	if b.R.Image != nil {
+		t.Error("relationship was not removed properly from the foreign struct")
+	}
+	if c.R.Image != nil {
+		t.Error("relationship was not removed properly from the foreign struct")
+	}
+	if d.R.Image != &a {
+		t.Error("relationship to a should have been preserved")
+	}
+	if e.R.Image != &a {
+		t.Error("relationship to a should have been preserved")
+	}
+
+	if len(a.R.Terms) != 2 {
+		t.Error("should have preserved two relationships")
+	}
+
+	// Removal doesn't do a stable deletion for performance so we have to flip the order
+	if a.R.Terms[1] != &d {
+		t.Error("relationship to d should have been preserved")
+	}
+	if a.R.Terms[0] != &e {
 		t.Error("relationship to e should have been preserved")
 	}
 }
@@ -2497,7 +1513,7 @@ func testImagesSelect(t *testing.T) {
 }
 
 var (
-	imageDBTypes = map[string]string{`ImageID`: `integer`, `Name`: `character varying`, `UserID`: `text`, `FolderID`: `integer`, `CreatedAt`: `timestamp without time zone`, `UpdatedAt`: `timestamp without time zone`}
+	imageDBTypes = map[string]string{`ImageID`: `integer`, `Name`: `character varying`, `UserID`: `text`, `Path`: `character varying`, `FolderID`: `integer`, `CreatedAt`: `timestamp without time zone`, `UpdatedAt`: `timestamp without time zone`}
 	_            = bytes.MinRead
 )
 

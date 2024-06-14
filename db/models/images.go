@@ -24,12 +24,13 @@ import (
 
 // Image is an object representing the database table.
 type Image struct {
-	ImageID   int       `boil:"image_id" json:"image_id" toml:"image_id" yaml:"image_id"`
-	Name      string    `boil:"name" json:"name" toml:"name" yaml:"name"`
-	UserID    string    `boil:"user_id" json:"user_id" toml:"user_id" yaml:"user_id"`
-	FolderID  null.Int  `boil:"folder_id" json:"folder_id,omitempty" toml:"folder_id" yaml:"folder_id,omitempty"`
-	CreatedAt time.Time `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
-	UpdatedAt time.Time `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
+	ImageID   int32      `boil:"image_id" json:"image_id" toml:"image_id" yaml:"image_id"`
+	Name      string     `boil:"name" json:"name" toml:"name" yaml:"name"`
+	UserID    string     `boil:"user_id" json:"user_id" toml:"user_id" yaml:"user_id"`
+	Path      string     `boil:"path" json:"path" toml:"path" yaml:"path"`
+	FolderID  null.Int32 `boil:"folder_id" json:"folder_id,omitempty" toml:"folder_id" yaml:"folder_id,omitempty"`
+	CreatedAt time.Time  `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
+	UpdatedAt time.Time  `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
 
 	R *imageR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L imageL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -39,6 +40,7 @@ var ImageColumns = struct {
 	ImageID   string
 	Name      string
 	UserID    string
+	Path      string
 	FolderID  string
 	CreatedAt string
 	UpdatedAt string
@@ -46,6 +48,7 @@ var ImageColumns = struct {
 	ImageID:   "image_id",
 	Name:      "name",
 	UserID:    "user_id",
+	Path:      "path",
 	FolderID:  "folder_id",
 	CreatedAt: "created_at",
 	UpdatedAt: "updated_at",
@@ -55,6 +58,7 @@ var ImageTableColumns = struct {
 	ImageID   string
 	Name      string
 	UserID    string
+	Path      string
 	FolderID  string
 	CreatedAt string
 	UpdatedAt string
@@ -62,6 +66,7 @@ var ImageTableColumns = struct {
 	ImageID:   "images.image_id",
 	Name:      "images.name",
 	UserID:    "images.user_id",
+	Path:      "images.path",
 	FolderID:  "images.folder_id",
 	CreatedAt: "images.created_at",
 	UpdatedAt: "images.updated_at",
@@ -70,49 +75,42 @@ var ImageTableColumns = struct {
 // Generated where
 
 var ImageWhere = struct {
-	ImageID   whereHelperint
+	ImageID   whereHelperint32
 	Name      whereHelperstring
 	UserID    whereHelperstring
-	FolderID  whereHelpernull_Int
+	Path      whereHelperstring
+	FolderID  whereHelpernull_Int32
 	CreatedAt whereHelpertime_Time
 	UpdatedAt whereHelpertime_Time
 }{
-	ImageID:   whereHelperint{field: "\"images\".\"image_id\""},
+	ImageID:   whereHelperint32{field: "\"images\".\"image_id\""},
 	Name:      whereHelperstring{field: "\"images\".\"name\""},
 	UserID:    whereHelperstring{field: "\"images\".\"user_id\""},
-	FolderID:  whereHelpernull_Int{field: "\"images\".\"folder_id\""},
+	Path:      whereHelperstring{field: "\"images\".\"path\""},
+	FolderID:  whereHelpernull_Int32{field: "\"images\".\"folder_id\""},
 	CreatedAt: whereHelpertime_Time{field: "\"images\".\"created_at\""},
 	UpdatedAt: whereHelpertime_Time{field: "\"images\".\"updated_at\""},
 }
 
 // ImageRels is where relationship names are stored.
 var ImageRels = struct {
-	Folder       string
-	User         string
-	ChapterTerms string
-	DynamicTerms string
-	PageTerms    string
-	SectionTerms string
-	Sections     string
+	Folder   string
+	User     string
+	Sections string
+	Terms    string
 }{
-	Folder:       "Folder",
-	User:         "User",
-	ChapterTerms: "ChapterTerms",
-	DynamicTerms: "DynamicTerms",
-	PageTerms:    "PageTerms",
-	SectionTerms: "SectionTerms",
-	Sections:     "Sections",
+	Folder:   "Folder",
+	User:     "User",
+	Sections: "Sections",
+	Terms:    "Terms",
 }
 
 // imageR is where relationships are stored.
 type imageR struct {
-	Folder       *Folder          `boil:"Folder" json:"Folder" toml:"Folder" yaml:"Folder"`
-	User         *User            `boil:"User" json:"User" toml:"User" yaml:"User"`
-	ChapterTerms ChapterTermSlice `boil:"ChapterTerms" json:"ChapterTerms" toml:"ChapterTerms" yaml:"ChapterTerms"`
-	DynamicTerms DynamicTermSlice `boil:"DynamicTerms" json:"DynamicTerms" toml:"DynamicTerms" yaml:"DynamicTerms"`
-	PageTerms    PageTermSlice    `boil:"PageTerms" json:"PageTerms" toml:"PageTerms" yaml:"PageTerms"`
-	SectionTerms SectionTermSlice `boil:"SectionTerms" json:"SectionTerms" toml:"SectionTerms" yaml:"SectionTerms"`
-	Sections     SectionSlice     `boil:"Sections" json:"Sections" toml:"Sections" yaml:"Sections"`
+	Folder   *Folder      `boil:"Folder" json:"Folder" toml:"Folder" yaml:"Folder"`
+	User     *User        `boil:"User" json:"User" toml:"User" yaml:"User"`
+	Sections SectionSlice `boil:"Sections" json:"Sections" toml:"Sections" yaml:"Sections"`
+	Terms    TermSlice    `boil:"Terms" json:"Terms" toml:"Terms" yaml:"Terms"`
 }
 
 // NewStruct creates a new relationship struct
@@ -134,34 +132,6 @@ func (r *imageR) GetUser() *User {
 	return r.User
 }
 
-func (r *imageR) GetChapterTerms() ChapterTermSlice {
-	if r == nil {
-		return nil
-	}
-	return r.ChapterTerms
-}
-
-func (r *imageR) GetDynamicTerms() DynamicTermSlice {
-	if r == nil {
-		return nil
-	}
-	return r.DynamicTerms
-}
-
-func (r *imageR) GetPageTerms() PageTermSlice {
-	if r == nil {
-		return nil
-	}
-	return r.PageTerms
-}
-
-func (r *imageR) GetSectionTerms() SectionTermSlice {
-	if r == nil {
-		return nil
-	}
-	return r.SectionTerms
-}
-
 func (r *imageR) GetSections() SectionSlice {
 	if r == nil {
 		return nil
@@ -169,12 +139,19 @@ func (r *imageR) GetSections() SectionSlice {
 	return r.Sections
 }
 
+func (r *imageR) GetTerms() TermSlice {
+	if r == nil {
+		return nil
+	}
+	return r.Terms
+}
+
 // imageL is where Load methods for each relationship are stored.
 type imageL struct{}
 
 var (
-	imageAllColumns            = []string{"image_id", "name", "user_id", "folder_id", "created_at", "updated_at"}
-	imageColumnsWithoutDefault = []string{"name", "user_id", "updated_at"}
+	imageAllColumns            = []string{"image_id", "name", "user_id", "path", "folder_id", "created_at", "updated_at"}
+	imageColumnsWithoutDefault = []string{"name", "user_id", "path", "updated_at"}
 	imageColumnsWithDefault    = []string{"image_id", "folder_id", "created_at"}
 	imagePrimaryKeyColumns     = []string{"image_id"}
 	imageGeneratedColumns      = []string{}
@@ -480,62 +457,6 @@ func (o *Image) User(mods ...qm.QueryMod) userQuery {
 	return Users(queryMods...)
 }
 
-// ChapterTerms retrieves all the chapter_term's ChapterTerms with an executor.
-func (o *Image) ChapterTerms(mods ...qm.QueryMod) chapterTermQuery {
-	var queryMods []qm.QueryMod
-	if len(mods) != 0 {
-		queryMods = append(queryMods, mods...)
-	}
-
-	queryMods = append(queryMods,
-		qm.Where("\"chapter_terms\".\"image_id\"=?", o.ImageID),
-	)
-
-	return ChapterTerms(queryMods...)
-}
-
-// DynamicTerms retrieves all the dynamic_term's DynamicTerms with an executor.
-func (o *Image) DynamicTerms(mods ...qm.QueryMod) dynamicTermQuery {
-	var queryMods []qm.QueryMod
-	if len(mods) != 0 {
-		queryMods = append(queryMods, mods...)
-	}
-
-	queryMods = append(queryMods,
-		qm.Where("\"dynamic_terms\".\"image_id\"=?", o.ImageID),
-	)
-
-	return DynamicTerms(queryMods...)
-}
-
-// PageTerms retrieves all the page_term's PageTerms with an executor.
-func (o *Image) PageTerms(mods ...qm.QueryMod) pageTermQuery {
-	var queryMods []qm.QueryMod
-	if len(mods) != 0 {
-		queryMods = append(queryMods, mods...)
-	}
-
-	queryMods = append(queryMods,
-		qm.Where("\"page_terms\".\"image_id\"=?", o.ImageID),
-	)
-
-	return PageTerms(queryMods...)
-}
-
-// SectionTerms retrieves all the section_term's SectionTerms with an executor.
-func (o *Image) SectionTerms(mods ...qm.QueryMod) sectionTermQuery {
-	var queryMods []qm.QueryMod
-	if len(mods) != 0 {
-		queryMods = append(queryMods, mods...)
-	}
-
-	queryMods = append(queryMods,
-		qm.Where("\"section_terms\".\"image_id\"=?", o.ImageID),
-	)
-
-	return SectionTerms(queryMods...)
-}
-
 // Sections retrieves all the section's Sections with an executor.
 func (o *Image) Sections(mods ...qm.QueryMod) sectionQuery {
 	var queryMods []qm.QueryMod
@@ -548,6 +469,20 @@ func (o *Image) Sections(mods ...qm.QueryMod) sectionQuery {
 	)
 
 	return Sections(queryMods...)
+}
+
+// Terms retrieves all the term's Terms with an executor.
+func (o *Image) Terms(mods ...qm.QueryMod) termQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"terms\".\"image_id\"=?", o.ImageID),
+	)
+
+	return Terms(queryMods...)
 }
 
 // LoadFolder allows an eager lookup of values, cached into the
@@ -794,462 +729,6 @@ func (imageL) LoadUser(ctx context.Context, e boil.ContextExecutor, singular boo
 	return nil
 }
 
-// LoadChapterTerms allows an eager lookup of values, cached into the
-// loaded structs of the objects. This is for a 1-M or N-M relationship.
-func (imageL) LoadChapterTerms(ctx context.Context, e boil.ContextExecutor, singular bool, maybeImage interface{}, mods queries.Applicator) error {
-	var slice []*Image
-	var object *Image
-
-	if singular {
-		var ok bool
-		object, ok = maybeImage.(*Image)
-		if !ok {
-			object = new(Image)
-			ok = queries.SetFromEmbeddedStruct(&object, &maybeImage)
-			if !ok {
-				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeImage))
-			}
-		}
-	} else {
-		s, ok := maybeImage.(*[]*Image)
-		if ok {
-			slice = *s
-		} else {
-			ok = queries.SetFromEmbeddedStruct(&slice, maybeImage)
-			if !ok {
-				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeImage))
-			}
-		}
-	}
-
-	args := make([]interface{}, 0, 1)
-	if singular {
-		if object.R == nil {
-			object.R = &imageR{}
-		}
-		args = append(args, object.ImageID)
-	} else {
-	Outer:
-		for _, obj := range slice {
-			if obj.R == nil {
-				obj.R = &imageR{}
-			}
-
-			for _, a := range args {
-				if queries.Equal(a, obj.ImageID) {
-					continue Outer
-				}
-			}
-
-			args = append(args, obj.ImageID)
-		}
-	}
-
-	if len(args) == 0 {
-		return nil
-	}
-
-	query := NewQuery(
-		qm.From(`chapter_terms`),
-		qm.WhereIn(`chapter_terms.image_id in ?`, args...),
-	)
-	if mods != nil {
-		mods.Apply(query)
-	}
-
-	results, err := query.QueryContext(ctx, e)
-	if err != nil {
-		return errors.Wrap(err, "failed to eager load chapter_terms")
-	}
-
-	var resultSlice []*ChapterTerm
-	if err = queries.Bind(results, &resultSlice); err != nil {
-		return errors.Wrap(err, "failed to bind eager loaded slice chapter_terms")
-	}
-
-	if err = results.Close(); err != nil {
-		return errors.Wrap(err, "failed to close results in eager load on chapter_terms")
-	}
-	if err = results.Err(); err != nil {
-		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for chapter_terms")
-	}
-
-	if len(chapterTermAfterSelectHooks) != 0 {
-		for _, obj := range resultSlice {
-			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
-				return err
-			}
-		}
-	}
-	if singular {
-		object.R.ChapterTerms = resultSlice
-		for _, foreign := range resultSlice {
-			if foreign.R == nil {
-				foreign.R = &chapterTermR{}
-			}
-			foreign.R.Image = object
-		}
-		return nil
-	}
-
-	for _, foreign := range resultSlice {
-		for _, local := range slice {
-			if queries.Equal(local.ImageID, foreign.ImageID) {
-				local.R.ChapterTerms = append(local.R.ChapterTerms, foreign)
-				if foreign.R == nil {
-					foreign.R = &chapterTermR{}
-				}
-				foreign.R.Image = local
-				break
-			}
-		}
-	}
-
-	return nil
-}
-
-// LoadDynamicTerms allows an eager lookup of values, cached into the
-// loaded structs of the objects. This is for a 1-M or N-M relationship.
-func (imageL) LoadDynamicTerms(ctx context.Context, e boil.ContextExecutor, singular bool, maybeImage interface{}, mods queries.Applicator) error {
-	var slice []*Image
-	var object *Image
-
-	if singular {
-		var ok bool
-		object, ok = maybeImage.(*Image)
-		if !ok {
-			object = new(Image)
-			ok = queries.SetFromEmbeddedStruct(&object, &maybeImage)
-			if !ok {
-				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeImage))
-			}
-		}
-	} else {
-		s, ok := maybeImage.(*[]*Image)
-		if ok {
-			slice = *s
-		} else {
-			ok = queries.SetFromEmbeddedStruct(&slice, maybeImage)
-			if !ok {
-				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeImage))
-			}
-		}
-	}
-
-	args := make([]interface{}, 0, 1)
-	if singular {
-		if object.R == nil {
-			object.R = &imageR{}
-		}
-		args = append(args, object.ImageID)
-	} else {
-	Outer:
-		for _, obj := range slice {
-			if obj.R == nil {
-				obj.R = &imageR{}
-			}
-
-			for _, a := range args {
-				if queries.Equal(a, obj.ImageID) {
-					continue Outer
-				}
-			}
-
-			args = append(args, obj.ImageID)
-		}
-	}
-
-	if len(args) == 0 {
-		return nil
-	}
-
-	query := NewQuery(
-		qm.From(`dynamic_terms`),
-		qm.WhereIn(`dynamic_terms.image_id in ?`, args...),
-	)
-	if mods != nil {
-		mods.Apply(query)
-	}
-
-	results, err := query.QueryContext(ctx, e)
-	if err != nil {
-		return errors.Wrap(err, "failed to eager load dynamic_terms")
-	}
-
-	var resultSlice []*DynamicTerm
-	if err = queries.Bind(results, &resultSlice); err != nil {
-		return errors.Wrap(err, "failed to bind eager loaded slice dynamic_terms")
-	}
-
-	if err = results.Close(); err != nil {
-		return errors.Wrap(err, "failed to close results in eager load on dynamic_terms")
-	}
-	if err = results.Err(); err != nil {
-		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for dynamic_terms")
-	}
-
-	if len(dynamicTermAfterSelectHooks) != 0 {
-		for _, obj := range resultSlice {
-			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
-				return err
-			}
-		}
-	}
-	if singular {
-		object.R.DynamicTerms = resultSlice
-		for _, foreign := range resultSlice {
-			if foreign.R == nil {
-				foreign.R = &dynamicTermR{}
-			}
-			foreign.R.Image = object
-		}
-		return nil
-	}
-
-	for _, foreign := range resultSlice {
-		for _, local := range slice {
-			if queries.Equal(local.ImageID, foreign.ImageID) {
-				local.R.DynamicTerms = append(local.R.DynamicTerms, foreign)
-				if foreign.R == nil {
-					foreign.R = &dynamicTermR{}
-				}
-				foreign.R.Image = local
-				break
-			}
-		}
-	}
-
-	return nil
-}
-
-// LoadPageTerms allows an eager lookup of values, cached into the
-// loaded structs of the objects. This is for a 1-M or N-M relationship.
-func (imageL) LoadPageTerms(ctx context.Context, e boil.ContextExecutor, singular bool, maybeImage interface{}, mods queries.Applicator) error {
-	var slice []*Image
-	var object *Image
-
-	if singular {
-		var ok bool
-		object, ok = maybeImage.(*Image)
-		if !ok {
-			object = new(Image)
-			ok = queries.SetFromEmbeddedStruct(&object, &maybeImage)
-			if !ok {
-				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeImage))
-			}
-		}
-	} else {
-		s, ok := maybeImage.(*[]*Image)
-		if ok {
-			slice = *s
-		} else {
-			ok = queries.SetFromEmbeddedStruct(&slice, maybeImage)
-			if !ok {
-				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeImage))
-			}
-		}
-	}
-
-	args := make([]interface{}, 0, 1)
-	if singular {
-		if object.R == nil {
-			object.R = &imageR{}
-		}
-		args = append(args, object.ImageID)
-	} else {
-	Outer:
-		for _, obj := range slice {
-			if obj.R == nil {
-				obj.R = &imageR{}
-			}
-
-			for _, a := range args {
-				if queries.Equal(a, obj.ImageID) {
-					continue Outer
-				}
-			}
-
-			args = append(args, obj.ImageID)
-		}
-	}
-
-	if len(args) == 0 {
-		return nil
-	}
-
-	query := NewQuery(
-		qm.From(`page_terms`),
-		qm.WhereIn(`page_terms.image_id in ?`, args...),
-	)
-	if mods != nil {
-		mods.Apply(query)
-	}
-
-	results, err := query.QueryContext(ctx, e)
-	if err != nil {
-		return errors.Wrap(err, "failed to eager load page_terms")
-	}
-
-	var resultSlice []*PageTerm
-	if err = queries.Bind(results, &resultSlice); err != nil {
-		return errors.Wrap(err, "failed to bind eager loaded slice page_terms")
-	}
-
-	if err = results.Close(); err != nil {
-		return errors.Wrap(err, "failed to close results in eager load on page_terms")
-	}
-	if err = results.Err(); err != nil {
-		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for page_terms")
-	}
-
-	if len(pageTermAfterSelectHooks) != 0 {
-		for _, obj := range resultSlice {
-			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
-				return err
-			}
-		}
-	}
-	if singular {
-		object.R.PageTerms = resultSlice
-		for _, foreign := range resultSlice {
-			if foreign.R == nil {
-				foreign.R = &pageTermR{}
-			}
-			foreign.R.Image = object
-		}
-		return nil
-	}
-
-	for _, foreign := range resultSlice {
-		for _, local := range slice {
-			if queries.Equal(local.ImageID, foreign.ImageID) {
-				local.R.PageTerms = append(local.R.PageTerms, foreign)
-				if foreign.R == nil {
-					foreign.R = &pageTermR{}
-				}
-				foreign.R.Image = local
-				break
-			}
-		}
-	}
-
-	return nil
-}
-
-// LoadSectionTerms allows an eager lookup of values, cached into the
-// loaded structs of the objects. This is for a 1-M or N-M relationship.
-func (imageL) LoadSectionTerms(ctx context.Context, e boil.ContextExecutor, singular bool, maybeImage interface{}, mods queries.Applicator) error {
-	var slice []*Image
-	var object *Image
-
-	if singular {
-		var ok bool
-		object, ok = maybeImage.(*Image)
-		if !ok {
-			object = new(Image)
-			ok = queries.SetFromEmbeddedStruct(&object, &maybeImage)
-			if !ok {
-				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeImage))
-			}
-		}
-	} else {
-		s, ok := maybeImage.(*[]*Image)
-		if ok {
-			slice = *s
-		} else {
-			ok = queries.SetFromEmbeddedStruct(&slice, maybeImage)
-			if !ok {
-				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeImage))
-			}
-		}
-	}
-
-	args := make([]interface{}, 0, 1)
-	if singular {
-		if object.R == nil {
-			object.R = &imageR{}
-		}
-		args = append(args, object.ImageID)
-	} else {
-	Outer:
-		for _, obj := range slice {
-			if obj.R == nil {
-				obj.R = &imageR{}
-			}
-
-			for _, a := range args {
-				if queries.Equal(a, obj.ImageID) {
-					continue Outer
-				}
-			}
-
-			args = append(args, obj.ImageID)
-		}
-	}
-
-	if len(args) == 0 {
-		return nil
-	}
-
-	query := NewQuery(
-		qm.From(`section_terms`),
-		qm.WhereIn(`section_terms.image_id in ?`, args...),
-	)
-	if mods != nil {
-		mods.Apply(query)
-	}
-
-	results, err := query.QueryContext(ctx, e)
-	if err != nil {
-		return errors.Wrap(err, "failed to eager load section_terms")
-	}
-
-	var resultSlice []*SectionTerm
-	if err = queries.Bind(results, &resultSlice); err != nil {
-		return errors.Wrap(err, "failed to bind eager loaded slice section_terms")
-	}
-
-	if err = results.Close(); err != nil {
-		return errors.Wrap(err, "failed to close results in eager load on section_terms")
-	}
-	if err = results.Err(); err != nil {
-		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for section_terms")
-	}
-
-	if len(sectionTermAfterSelectHooks) != 0 {
-		for _, obj := range resultSlice {
-			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
-				return err
-			}
-		}
-	}
-	if singular {
-		object.R.SectionTerms = resultSlice
-		for _, foreign := range resultSlice {
-			if foreign.R == nil {
-				foreign.R = &sectionTermR{}
-			}
-			foreign.R.Image = object
-		}
-		return nil
-	}
-
-	for _, foreign := range resultSlice {
-		for _, local := range slice {
-			if queries.Equal(local.ImageID, foreign.ImageID) {
-				local.R.SectionTerms = append(local.R.SectionTerms, foreign)
-				if foreign.R == nil {
-					foreign.R = &sectionTermR{}
-				}
-				foreign.R.Image = local
-				break
-			}
-		}
-	}
-
-	return nil
-}
-
 // LoadSections allows an eager lookup of values, cached into the
 // loaded structs of the objects. This is for a 1-M or N-M relationship.
 func (imageL) LoadSections(ctx context.Context, e boil.ContextExecutor, singular bool, maybeImage interface{}, mods queries.Applicator) error {
@@ -1354,6 +833,120 @@ func (imageL) LoadSections(ctx context.Context, e boil.ContextExecutor, singular
 				local.R.Sections = append(local.R.Sections, foreign)
 				if foreign.R == nil {
 					foreign.R = &sectionR{}
+				}
+				foreign.R.Image = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// LoadTerms allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (imageL) LoadTerms(ctx context.Context, e boil.ContextExecutor, singular bool, maybeImage interface{}, mods queries.Applicator) error {
+	var slice []*Image
+	var object *Image
+
+	if singular {
+		var ok bool
+		object, ok = maybeImage.(*Image)
+		if !ok {
+			object = new(Image)
+			ok = queries.SetFromEmbeddedStruct(&object, &maybeImage)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeImage))
+			}
+		}
+	} else {
+		s, ok := maybeImage.(*[]*Image)
+		if ok {
+			slice = *s
+		} else {
+			ok = queries.SetFromEmbeddedStruct(&slice, maybeImage)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeImage))
+			}
+		}
+	}
+
+	args := make([]interface{}, 0, 1)
+	if singular {
+		if object.R == nil {
+			object.R = &imageR{}
+		}
+		args = append(args, object.ImageID)
+	} else {
+	Outer:
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &imageR{}
+			}
+
+			for _, a := range args {
+				if queries.Equal(a, obj.ImageID) {
+					continue Outer
+				}
+			}
+
+			args = append(args, obj.ImageID)
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	query := NewQuery(
+		qm.From(`terms`),
+		qm.WhereIn(`terms.image_id in ?`, args...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load terms")
+	}
+
+	var resultSlice []*Term
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice terms")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on terms")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for terms")
+	}
+
+	if len(termAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.Terms = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &termR{}
+			}
+			foreign.R.Image = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if queries.Equal(local.ImageID, foreign.ImageID) {
+				local.R.Terms = append(local.R.Terms, foreign)
+				if foreign.R == nil {
+					foreign.R = &termR{}
 				}
 				foreign.R.Image = local
 				break
@@ -1491,514 +1084,6 @@ func (o *Image) SetUser(ctx context.Context, exec boil.ContextExecutor, insert b
 	return nil
 }
 
-// AddChapterTerms adds the given related objects to the existing relationships
-// of the image, optionally inserting them as new records.
-// Appends related to o.R.ChapterTerms.
-// Sets related.R.Image appropriately.
-func (o *Image) AddChapterTerms(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*ChapterTerm) error {
-	var err error
-	for _, rel := range related {
-		if insert {
-			queries.Assign(&rel.ImageID, o.ImageID)
-			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
-				return errors.Wrap(err, "failed to insert into foreign table")
-			}
-		} else {
-			updateQuery := fmt.Sprintf(
-				"UPDATE \"chapter_terms\" SET %s WHERE %s",
-				strmangle.SetParamNames("\"", "\"", 1, []string{"image_id"}),
-				strmangle.WhereClause("\"", "\"", 2, chapterTermPrimaryKeyColumns),
-			)
-			values := []interface{}{o.ImageID, rel.ChapterTermID}
-
-			if boil.IsDebug(ctx) {
-				writer := boil.DebugWriterFrom(ctx)
-				fmt.Fprintln(writer, updateQuery)
-				fmt.Fprintln(writer, values)
-			}
-			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
-				return errors.Wrap(err, "failed to update foreign table")
-			}
-
-			queries.Assign(&rel.ImageID, o.ImageID)
-		}
-	}
-
-	if o.R == nil {
-		o.R = &imageR{
-			ChapterTerms: related,
-		}
-	} else {
-		o.R.ChapterTerms = append(o.R.ChapterTerms, related...)
-	}
-
-	for _, rel := range related {
-		if rel.R == nil {
-			rel.R = &chapterTermR{
-				Image: o,
-			}
-		} else {
-			rel.R.Image = o
-		}
-	}
-	return nil
-}
-
-// SetChapterTerms removes all previously related items of the
-// image replacing them completely with the passed
-// in related items, optionally inserting them as new records.
-// Sets o.R.Image's ChapterTerms accordingly.
-// Replaces o.R.ChapterTerms with related.
-// Sets related.R.Image's ChapterTerms accordingly.
-func (o *Image) SetChapterTerms(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*ChapterTerm) error {
-	query := "update \"chapter_terms\" set \"image_id\" = null where \"image_id\" = $1"
-	values := []interface{}{o.ImageID}
-	if boil.IsDebug(ctx) {
-		writer := boil.DebugWriterFrom(ctx)
-		fmt.Fprintln(writer, query)
-		fmt.Fprintln(writer, values)
-	}
-	_, err := exec.ExecContext(ctx, query, values...)
-	if err != nil {
-		return errors.Wrap(err, "failed to remove relationships before set")
-	}
-
-	if o.R != nil {
-		for _, rel := range o.R.ChapterTerms {
-			queries.SetScanner(&rel.ImageID, nil)
-			if rel.R == nil {
-				continue
-			}
-
-			rel.R.Image = nil
-		}
-		o.R.ChapterTerms = nil
-	}
-
-	return o.AddChapterTerms(ctx, exec, insert, related...)
-}
-
-// RemoveChapterTerms relationships from objects passed in.
-// Removes related items from R.ChapterTerms (uses pointer comparison, removal does not keep order)
-// Sets related.R.Image.
-func (o *Image) RemoveChapterTerms(ctx context.Context, exec boil.ContextExecutor, related ...*ChapterTerm) error {
-	if len(related) == 0 {
-		return nil
-	}
-
-	var err error
-	for _, rel := range related {
-		queries.SetScanner(&rel.ImageID, nil)
-		if rel.R != nil {
-			rel.R.Image = nil
-		}
-		if _, err = rel.Update(ctx, exec, boil.Whitelist("image_id")); err != nil {
-			return err
-		}
-	}
-	if o.R == nil {
-		return nil
-	}
-
-	for _, rel := range related {
-		for i, ri := range o.R.ChapterTerms {
-			if rel != ri {
-				continue
-			}
-
-			ln := len(o.R.ChapterTerms)
-			if ln > 1 && i < ln-1 {
-				o.R.ChapterTerms[i] = o.R.ChapterTerms[ln-1]
-			}
-			o.R.ChapterTerms = o.R.ChapterTerms[:ln-1]
-			break
-		}
-	}
-
-	return nil
-}
-
-// AddDynamicTerms adds the given related objects to the existing relationships
-// of the image, optionally inserting them as new records.
-// Appends related to o.R.DynamicTerms.
-// Sets related.R.Image appropriately.
-func (o *Image) AddDynamicTerms(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*DynamicTerm) error {
-	var err error
-	for _, rel := range related {
-		if insert {
-			queries.Assign(&rel.ImageID, o.ImageID)
-			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
-				return errors.Wrap(err, "failed to insert into foreign table")
-			}
-		} else {
-			updateQuery := fmt.Sprintf(
-				"UPDATE \"dynamic_terms\" SET %s WHERE %s",
-				strmangle.SetParamNames("\"", "\"", 1, []string{"image_id"}),
-				strmangle.WhereClause("\"", "\"", 2, dynamicTermPrimaryKeyColumns),
-			)
-			values := []interface{}{o.ImageID, rel.DynamicTermID}
-
-			if boil.IsDebug(ctx) {
-				writer := boil.DebugWriterFrom(ctx)
-				fmt.Fprintln(writer, updateQuery)
-				fmt.Fprintln(writer, values)
-			}
-			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
-				return errors.Wrap(err, "failed to update foreign table")
-			}
-
-			queries.Assign(&rel.ImageID, o.ImageID)
-		}
-	}
-
-	if o.R == nil {
-		o.R = &imageR{
-			DynamicTerms: related,
-		}
-	} else {
-		o.R.DynamicTerms = append(o.R.DynamicTerms, related...)
-	}
-
-	for _, rel := range related {
-		if rel.R == nil {
-			rel.R = &dynamicTermR{
-				Image: o,
-			}
-		} else {
-			rel.R.Image = o
-		}
-	}
-	return nil
-}
-
-// SetDynamicTerms removes all previously related items of the
-// image replacing them completely with the passed
-// in related items, optionally inserting them as new records.
-// Sets o.R.Image's DynamicTerms accordingly.
-// Replaces o.R.DynamicTerms with related.
-// Sets related.R.Image's DynamicTerms accordingly.
-func (o *Image) SetDynamicTerms(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*DynamicTerm) error {
-	query := "update \"dynamic_terms\" set \"image_id\" = null where \"image_id\" = $1"
-	values := []interface{}{o.ImageID}
-	if boil.IsDebug(ctx) {
-		writer := boil.DebugWriterFrom(ctx)
-		fmt.Fprintln(writer, query)
-		fmt.Fprintln(writer, values)
-	}
-	_, err := exec.ExecContext(ctx, query, values...)
-	if err != nil {
-		return errors.Wrap(err, "failed to remove relationships before set")
-	}
-
-	if o.R != nil {
-		for _, rel := range o.R.DynamicTerms {
-			queries.SetScanner(&rel.ImageID, nil)
-			if rel.R == nil {
-				continue
-			}
-
-			rel.R.Image = nil
-		}
-		o.R.DynamicTerms = nil
-	}
-
-	return o.AddDynamicTerms(ctx, exec, insert, related...)
-}
-
-// RemoveDynamicTerms relationships from objects passed in.
-// Removes related items from R.DynamicTerms (uses pointer comparison, removal does not keep order)
-// Sets related.R.Image.
-func (o *Image) RemoveDynamicTerms(ctx context.Context, exec boil.ContextExecutor, related ...*DynamicTerm) error {
-	if len(related) == 0 {
-		return nil
-	}
-
-	var err error
-	for _, rel := range related {
-		queries.SetScanner(&rel.ImageID, nil)
-		if rel.R != nil {
-			rel.R.Image = nil
-		}
-		if _, err = rel.Update(ctx, exec, boil.Whitelist("image_id")); err != nil {
-			return err
-		}
-	}
-	if o.R == nil {
-		return nil
-	}
-
-	for _, rel := range related {
-		for i, ri := range o.R.DynamicTerms {
-			if rel != ri {
-				continue
-			}
-
-			ln := len(o.R.DynamicTerms)
-			if ln > 1 && i < ln-1 {
-				o.R.DynamicTerms[i] = o.R.DynamicTerms[ln-1]
-			}
-			o.R.DynamicTerms = o.R.DynamicTerms[:ln-1]
-			break
-		}
-	}
-
-	return nil
-}
-
-// AddPageTerms adds the given related objects to the existing relationships
-// of the image, optionally inserting them as new records.
-// Appends related to o.R.PageTerms.
-// Sets related.R.Image appropriately.
-func (o *Image) AddPageTerms(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*PageTerm) error {
-	var err error
-	for _, rel := range related {
-		if insert {
-			queries.Assign(&rel.ImageID, o.ImageID)
-			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
-				return errors.Wrap(err, "failed to insert into foreign table")
-			}
-		} else {
-			updateQuery := fmt.Sprintf(
-				"UPDATE \"page_terms\" SET %s WHERE %s",
-				strmangle.SetParamNames("\"", "\"", 1, []string{"image_id"}),
-				strmangle.WhereClause("\"", "\"", 2, pageTermPrimaryKeyColumns),
-			)
-			values := []interface{}{o.ImageID, rel.PageTermID}
-
-			if boil.IsDebug(ctx) {
-				writer := boil.DebugWriterFrom(ctx)
-				fmt.Fprintln(writer, updateQuery)
-				fmt.Fprintln(writer, values)
-			}
-			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
-				return errors.Wrap(err, "failed to update foreign table")
-			}
-
-			queries.Assign(&rel.ImageID, o.ImageID)
-		}
-	}
-
-	if o.R == nil {
-		o.R = &imageR{
-			PageTerms: related,
-		}
-	} else {
-		o.R.PageTerms = append(o.R.PageTerms, related...)
-	}
-
-	for _, rel := range related {
-		if rel.R == nil {
-			rel.R = &pageTermR{
-				Image: o,
-			}
-		} else {
-			rel.R.Image = o
-		}
-	}
-	return nil
-}
-
-// SetPageTerms removes all previously related items of the
-// image replacing them completely with the passed
-// in related items, optionally inserting them as new records.
-// Sets o.R.Image's PageTerms accordingly.
-// Replaces o.R.PageTerms with related.
-// Sets related.R.Image's PageTerms accordingly.
-func (o *Image) SetPageTerms(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*PageTerm) error {
-	query := "update \"page_terms\" set \"image_id\" = null where \"image_id\" = $1"
-	values := []interface{}{o.ImageID}
-	if boil.IsDebug(ctx) {
-		writer := boil.DebugWriterFrom(ctx)
-		fmt.Fprintln(writer, query)
-		fmt.Fprintln(writer, values)
-	}
-	_, err := exec.ExecContext(ctx, query, values...)
-	if err != nil {
-		return errors.Wrap(err, "failed to remove relationships before set")
-	}
-
-	if o.R != nil {
-		for _, rel := range o.R.PageTerms {
-			queries.SetScanner(&rel.ImageID, nil)
-			if rel.R == nil {
-				continue
-			}
-
-			rel.R.Image = nil
-		}
-		o.R.PageTerms = nil
-	}
-
-	return o.AddPageTerms(ctx, exec, insert, related...)
-}
-
-// RemovePageTerms relationships from objects passed in.
-// Removes related items from R.PageTerms (uses pointer comparison, removal does not keep order)
-// Sets related.R.Image.
-func (o *Image) RemovePageTerms(ctx context.Context, exec boil.ContextExecutor, related ...*PageTerm) error {
-	if len(related) == 0 {
-		return nil
-	}
-
-	var err error
-	for _, rel := range related {
-		queries.SetScanner(&rel.ImageID, nil)
-		if rel.R != nil {
-			rel.R.Image = nil
-		}
-		if _, err = rel.Update(ctx, exec, boil.Whitelist("image_id")); err != nil {
-			return err
-		}
-	}
-	if o.R == nil {
-		return nil
-	}
-
-	for _, rel := range related {
-		for i, ri := range o.R.PageTerms {
-			if rel != ri {
-				continue
-			}
-
-			ln := len(o.R.PageTerms)
-			if ln > 1 && i < ln-1 {
-				o.R.PageTerms[i] = o.R.PageTerms[ln-1]
-			}
-			o.R.PageTerms = o.R.PageTerms[:ln-1]
-			break
-		}
-	}
-
-	return nil
-}
-
-// AddSectionTerms adds the given related objects to the existing relationships
-// of the image, optionally inserting them as new records.
-// Appends related to o.R.SectionTerms.
-// Sets related.R.Image appropriately.
-func (o *Image) AddSectionTerms(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*SectionTerm) error {
-	var err error
-	for _, rel := range related {
-		if insert {
-			queries.Assign(&rel.ImageID, o.ImageID)
-			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
-				return errors.Wrap(err, "failed to insert into foreign table")
-			}
-		} else {
-			updateQuery := fmt.Sprintf(
-				"UPDATE \"section_terms\" SET %s WHERE %s",
-				strmangle.SetParamNames("\"", "\"", 1, []string{"image_id"}),
-				strmangle.WhereClause("\"", "\"", 2, sectionTermPrimaryKeyColumns),
-			)
-			values := []interface{}{o.ImageID, rel.SectionTermID}
-
-			if boil.IsDebug(ctx) {
-				writer := boil.DebugWriterFrom(ctx)
-				fmt.Fprintln(writer, updateQuery)
-				fmt.Fprintln(writer, values)
-			}
-			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
-				return errors.Wrap(err, "failed to update foreign table")
-			}
-
-			queries.Assign(&rel.ImageID, o.ImageID)
-		}
-	}
-
-	if o.R == nil {
-		o.R = &imageR{
-			SectionTerms: related,
-		}
-	} else {
-		o.R.SectionTerms = append(o.R.SectionTerms, related...)
-	}
-
-	for _, rel := range related {
-		if rel.R == nil {
-			rel.R = &sectionTermR{
-				Image: o,
-			}
-		} else {
-			rel.R.Image = o
-		}
-	}
-	return nil
-}
-
-// SetSectionTerms removes all previously related items of the
-// image replacing them completely with the passed
-// in related items, optionally inserting them as new records.
-// Sets o.R.Image's SectionTerms accordingly.
-// Replaces o.R.SectionTerms with related.
-// Sets related.R.Image's SectionTerms accordingly.
-func (o *Image) SetSectionTerms(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*SectionTerm) error {
-	query := "update \"section_terms\" set \"image_id\" = null where \"image_id\" = $1"
-	values := []interface{}{o.ImageID}
-	if boil.IsDebug(ctx) {
-		writer := boil.DebugWriterFrom(ctx)
-		fmt.Fprintln(writer, query)
-		fmt.Fprintln(writer, values)
-	}
-	_, err := exec.ExecContext(ctx, query, values...)
-	if err != nil {
-		return errors.Wrap(err, "failed to remove relationships before set")
-	}
-
-	if o.R != nil {
-		for _, rel := range o.R.SectionTerms {
-			queries.SetScanner(&rel.ImageID, nil)
-			if rel.R == nil {
-				continue
-			}
-
-			rel.R.Image = nil
-		}
-		o.R.SectionTerms = nil
-	}
-
-	return o.AddSectionTerms(ctx, exec, insert, related...)
-}
-
-// RemoveSectionTerms relationships from objects passed in.
-// Removes related items from R.SectionTerms (uses pointer comparison, removal does not keep order)
-// Sets related.R.Image.
-func (o *Image) RemoveSectionTerms(ctx context.Context, exec boil.ContextExecutor, related ...*SectionTerm) error {
-	if len(related) == 0 {
-		return nil
-	}
-
-	var err error
-	for _, rel := range related {
-		queries.SetScanner(&rel.ImageID, nil)
-		if rel.R != nil {
-			rel.R.Image = nil
-		}
-		if _, err = rel.Update(ctx, exec, boil.Whitelist("image_id")); err != nil {
-			return err
-		}
-	}
-	if o.R == nil {
-		return nil
-	}
-
-	for _, rel := range related {
-		for i, ri := range o.R.SectionTerms {
-			if rel != ri {
-				continue
-			}
-
-			ln := len(o.R.SectionTerms)
-			if ln > 1 && i < ln-1 {
-				o.R.SectionTerms[i] = o.R.SectionTerms[ln-1]
-			}
-			o.R.SectionTerms = o.R.SectionTerms[:ln-1]
-			break
-		}
-	}
-
-	return nil
-}
-
 // AddSections adds the given related objects to the existing relationships
 // of the image, optionally inserting them as new records.
 // Appends related to o.R.Sections.
@@ -2126,6 +1211,133 @@ func (o *Image) RemoveSections(ctx context.Context, exec boil.ContextExecutor, r
 	return nil
 }
 
+// AddTerms adds the given related objects to the existing relationships
+// of the image, optionally inserting them as new records.
+// Appends related to o.R.Terms.
+// Sets related.R.Image appropriately.
+func (o *Image) AddTerms(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*Term) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			queries.Assign(&rel.ImageID, o.ImageID)
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"terms\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"image_id"}),
+				strmangle.WhereClause("\"", "\"", 2, termPrimaryKeyColumns),
+			)
+			values := []interface{}{o.ImageID, rel.TermID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			queries.Assign(&rel.ImageID, o.ImageID)
+		}
+	}
+
+	if o.R == nil {
+		o.R = &imageR{
+			Terms: related,
+		}
+	} else {
+		o.R.Terms = append(o.R.Terms, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &termR{
+				Image: o,
+			}
+		} else {
+			rel.R.Image = o
+		}
+	}
+	return nil
+}
+
+// SetTerms removes all previously related items of the
+// image replacing them completely with the passed
+// in related items, optionally inserting them as new records.
+// Sets o.R.Image's Terms accordingly.
+// Replaces o.R.Terms with related.
+// Sets related.R.Image's Terms accordingly.
+func (o *Image) SetTerms(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*Term) error {
+	query := "update \"terms\" set \"image_id\" = null where \"image_id\" = $1"
+	values := []interface{}{o.ImageID}
+	if boil.IsDebug(ctx) {
+		writer := boil.DebugWriterFrom(ctx)
+		fmt.Fprintln(writer, query)
+		fmt.Fprintln(writer, values)
+	}
+	_, err := exec.ExecContext(ctx, query, values...)
+	if err != nil {
+		return errors.Wrap(err, "failed to remove relationships before set")
+	}
+
+	if o.R != nil {
+		for _, rel := range o.R.Terms {
+			queries.SetScanner(&rel.ImageID, nil)
+			if rel.R == nil {
+				continue
+			}
+
+			rel.R.Image = nil
+		}
+		o.R.Terms = nil
+	}
+
+	return o.AddTerms(ctx, exec, insert, related...)
+}
+
+// RemoveTerms relationships from objects passed in.
+// Removes related items from R.Terms (uses pointer comparison, removal does not keep order)
+// Sets related.R.Image.
+func (o *Image) RemoveTerms(ctx context.Context, exec boil.ContextExecutor, related ...*Term) error {
+	if len(related) == 0 {
+		return nil
+	}
+
+	var err error
+	for _, rel := range related {
+		queries.SetScanner(&rel.ImageID, nil)
+		if rel.R != nil {
+			rel.R.Image = nil
+		}
+		if _, err = rel.Update(ctx, exec, boil.Whitelist("image_id")); err != nil {
+			return err
+		}
+	}
+	if o.R == nil {
+		return nil
+	}
+
+	for _, rel := range related {
+		for i, ri := range o.R.Terms {
+			if rel != ri {
+				continue
+			}
+
+			ln := len(o.R.Terms)
+			if ln > 1 && i < ln-1 {
+				o.R.Terms[i] = o.R.Terms[ln-1]
+			}
+			o.R.Terms = o.R.Terms[:ln-1]
+			break
+		}
+	}
+
+	return nil
+}
+
 // Images retrieves all the records using an executor.
 func Images(mods ...qm.QueryMod) imageQuery {
 	mods = append(mods, qm.From("\"images\""))
@@ -2139,7 +1351,7 @@ func Images(mods ...qm.QueryMod) imageQuery {
 
 // FindImage retrieves a single record by ID with an executor.
 // If selectCols is empty Find will return all columns.
-func FindImage(ctx context.Context, exec boil.ContextExecutor, imageID int, selectCols ...string) (*Image, error) {
+func FindImage(ctx context.Context, exec boil.ContextExecutor, imageID int32, selectCols ...string) (*Image, error) {
 	imageObj := &Image{}
 
 	sel := "*"
@@ -2662,7 +1874,7 @@ func (o *ImageSlice) ReloadAll(ctx context.Context, exec boil.ContextExecutor) e
 }
 
 // ImageExists checks if the Image row exists.
-func ImageExists(ctx context.Context, exec boil.ContextExecutor, imageID int) (bool, error) {
+func ImageExists(ctx context.Context, exec boil.ContextExecutor, imageID int32) (bool, error) {
 	var exists bool
 	sql := "select exists(select 1 from \"images\" where \"image_id\"=$1 limit 1)"
 

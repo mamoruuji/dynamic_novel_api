@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"reflect"
 	"time"
 
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -45,57 +46,118 @@ func (s *dynamicServer) GetDynamic(
 
 	// boil.DebugMode = true
 	modifiers := []QueryMod{
+		Load(DynamicRels.User),
 		Load(DynamicRels.Chapters),
+		Load(DynamicRels.ImageOfCover),
+		Load(DynamicRels.Terms),
 		Load(Rels(DynamicRels.Chapters, ChapterRels.Pages)),
-		// Load(DynamicRels.DynamicTerms),
-		DynamicWhere.DynamicID.EQ(int(req.Msg.DynamicId)),
+		Load(Rels(DynamicRels.Chapters, ChapterRels.Terms)),
+		Load(Rels(DynamicRels.Chapters, ChapterRels.Pages, PageRels.Sections)),
+		Load(Rels(DynamicRels.Chapters, ChapterRels.Pages, PageRels.Terms)),
+		Load(Rels(DynamicRels.Chapters, ChapterRels.Pages, PageRels.Sections, SectionRels.Type)),
+		Load(Rels(DynamicRels.Chapters, ChapterRels.Pages, PageRels.Sections, SectionRels.Image)),
+		Load(Rels(DynamicRels.Chapters, ChapterRels.Pages, PageRels.Sections, SectionRels.Font)),
+		Load(Rels(DynamicRels.Chapters, ChapterRels.Pages, PageRels.Sections, SectionRels.FrameColor)),
+		Load(Rels(DynamicRels.Chapters, ChapterRels.Pages, PageRels.Sections, SectionRels.TextColor)),
+		Load(Rels(DynamicRels.Chapters, ChapterRels.Pages, PageRels.Sections, SectionRels.Terms)),
+		DynamicWhere.DynamicID.EQ(req.Msg.DynamicId),
 	}
 
 	dynamic, err := Dynamics(modifiers...).One(ctx, db)
-	// spew.Dump(page)
-
-	var pbChapters []*dynamicv1.GetChapterData
-	for _, chapter := range dynamic.R.Chapters {
-		var pbPages []*dynamicv1.GetPageData
-		for _, page := range chapter.R.Pages {
-			pageID := int32(page.PageID)
-			pageOrder := int32(page.Order)
-			pbPage := &dynamicv1.GetPageData{
-				PageId: pageID,
-				Title:  page.Title,
-				Order:  pageOrder,
-			}
-			pbPages = append(pbPages, pbPage)
-		}
-		chapterID := int32(chapter.ChapterID)
-		chapterOrder := int32(chapter.Order)
-		pbChapter := &dynamicv1.GetChapterData{
-			ChapterId: chapterID,
-			Title:     chapter.Title,
-			Order:     chapterOrder,
-			Pages:     pbPages,
-		}
-		pbChapters = append(pbChapters, pbChapter)
-	}
 
 	if err != nil {
 		log.Printf("failed to get dynamics: %v", err)
 		return nil, err
 	}
 
-	dynamicID := int32(dynamic.DynamicID)
+	var pbChapters []*dynamicv1.ChapterData
+	for _, chapter := range dynamic.R.Chapters {
+		var pbPages []*dynamicv1.PageData
+		for _, page := range chapter.R.Pages {
+			var pbSections []*dynamicv1.SectionData
+			for _, section := range page.R.Sections {
+
+				pbImage := SetImageData(section.R.Image)
+				pbTerms := SetTermData(section.R.Terms)
+
+				pbSection := &dynamicv1.SectionData{
+					SectionId:  section.SectionID,
+					Name:       section.Name,
+					Order:      section.Order,
+					Type:       section.R.Type.Name,
+					FrameColor: section.R.FrameColor.Name,
+					Text:       section.Text,
+					TextColor:  section.R.TextColor.Name,
+					TextSize:   section.TextSize,
+					Font:       section.R.Font.Name,
+					Image:      pbImage,
+					Terms:      pbTerms,
+				}
+				pbSections = append(pbSections, pbSection)
+			}
+
+			pbTerms := SetTermData(page.R.Terms)
+
+			pbPage := &dynamicv1.PageData{
+				PageId:   page.PageID,
+				Title:    page.Title,
+				Order:    page.Order,
+				Sections: pbSections,
+				Terms:    pbTerms,
+			}
+			pbPages = append(pbPages, pbPage)
+		}
+		pbTerms := SetTermData(chapter.R.Terms)
+
+		pbChapter := &dynamicv1.ChapterData{
+			ChapterId: chapter.ChapterID,
+			Title:     chapter.Title,
+			Order:     chapter.Order,
+			Pages:     pbPages,
+			Terms:     pbTerms,
+		}
+		pbChapters = append(pbChapters, pbChapter)
+	}
+
+	pbTerms := SetTermData(dynamic.R.Terms)
 	createdAT := timestamppb.New(dynamic.CreatedAt)
 	updatedAT := timestamppb.New(dynamic.UpdatedAt)
 
+	modifiers = []QueryMod{
+		Load(DynamicsOnTagRels.Tag),
+		DynamicsOnTagWhere.DynamicID.EQ(req.Msg.DynamicId),
+	}
+
+	DynamicsOnTags, err := DynamicsOnTags(modifiers...).All(ctx, db)
+
+	if err != nil {
+		log.Printf("failed to get tags: %v", err)
+		return nil, err
+	}
+	var pbTags []*dynamicv1.TagData
+	for _, dynamicsOnTag := range DynamicsOnTags {
+
+		pbTag := &dynamicv1.TagData{
+			TagId: dynamicsOnTag.TagID,
+			Name:  dynamicsOnTag.R.Tag.Name,
+		}
+		pbTags = append(pbTags, pbTag)
+	}
+	// spew.Dump(pbTags)
+
 	res := connect.NewResponse(&dynamicv1.GetDynamicResponse{
-		DynamicId:   dynamicID,
-		Title:       dynamic.Title,
-		Overview:    dynamic.Overview,
-		UserId:      dynamic.UserID,
-		Published:   dynamic.Published,
-		Chapters:    pbChapters,
-		CreatedTime: createdAT,
-		UpdatedTime: updatedAT,
+		DynamicId:      dynamic.DynamicID,
+		Title:          dynamic.Title,
+		Overview:       dynamic.Overview,
+		UserId:         dynamic.UserID,
+		Published:      dynamic.Published,
+		UserName:       dynamic.R.User.Name,
+		CoverImageName: dynamic.R.ImageOfCover.Name,
+		Chapters:       pbChapters,
+		Terms:          pbTerms,
+		Tags:           pbTags,
+		CreatedTime:    createdAT,
+		UpdatedTime:    updatedAT,
 	})
 
 	return res, nil
@@ -105,7 +167,7 @@ func (s *dynamicServer) ListDynamics(
 	ctx context.Context,
 	req *connect.Request[dynamicv1.ListDynamicsRequest],
 ) (*connect.Response[dynamicv1.ListDynamicsResponse], error) {
-	sortCategory, err := FindSort(ctx, db, int(req.Msg.SortCategory))
+	sortCategory, err := FindSort(ctx, db, req.Msg.SortCategory)
 
 	if err != nil {
 		log.Printf("failed to get sorts: %v", err)
@@ -113,6 +175,7 @@ func (s *dynamicServer) ListDynamics(
 	}
 
 	modifiers := []QueryMod{
+		Load(DynamicRels.ImageOfCover),
 		DynamicWhere.Published.EQ(true),
 		OrderBy(fmt.Sprintf("%s %s", sortCategory.SQL, req.Msg.SortOrder)),
 		LeftOuterJoin(TableNames.Users + " on " + TableNames.Dynamics + "." + DynamicColumns.UserID + " = " + TableNames.Users + "." + UserColumns.UserID),
@@ -177,17 +240,16 @@ func (s *dynamicServer) ListDynamics(
 
 	var pbDynamics []*dynamicv1.ListDynamicData
 	for _, dynamic := range dynamics {
-		dynamicID := int32(dynamic.DynamicID)
 		createdAT := timestamppb.New(dynamic.CreatedAt)
 		updatedAT := timestamppb.New(dynamic.UpdatedAt)
 		pbDynamic := &dynamicv1.ListDynamicData{
-			DynamicId:   dynamicID,
-			Title:       dynamic.Title,
-			Overview:    dynamic.Overview,
-			UserId:      dynamic.UserID,
-			Published:   dynamic.Published,
-			CreatedTime: createdAT,
-			UpdatedTime: updatedAT,
+			DynamicId:      dynamic.DynamicID,
+			Title:          dynamic.Title,
+			Overview:       dynamic.Overview,
+			UserName:       dynamic.R.User.Name,
+			CoverImageName: dynamic.R.ImageOfCover.Name,
+			CreatedTime:    createdAT,
+			UpdatedTime:    updatedAT,
 		}
 		pbDynamics = append(pbDynamics, pbDynamic)
 	}
@@ -209,16 +271,13 @@ func (s *pageServer) ListPages(
 		return nil, err
 	}
 
-	var pbPages []*dynamicv1.PageData
-	for _, p := range pages {
-		pageID := int32(p.PageID)
-		order := int32(p.Order)
-		chapterID := int32(p.ChapterID)
-		pbPage := &dynamicv1.PageData{
-			PageId:    pageID,
-			Title:     p.Title,
-			Order:     order,
-			ChapterId: chapterID,
+	var pbPages []*dynamicv1.ListPageData
+	for _, page := range pages {
+		pbPage := &dynamicv1.ListPageData{
+			PageId:    page.PageID,
+			Title:     page.Title,
+			Order:     page.Order,
+			ChapterId: page.ChapterID,
 		}
 		pbPages = append(pbPages, pbPage)
 	}
@@ -241,11 +300,10 @@ func (s *sortServer) ListSorts(
 	}
 
 	var pbSorts []*dynamicv1.SortData
-	for _, s := range sorts {
-		sortID := int32(s.SortID)
+	for _, sort := range sorts {
 		pbSort := &dynamicv1.SortData{
-			SortId: sortID,
-			Name:   s.Name,
+			SortId: sort.SortID,
+			Name:   sort.Name,
 		}
 		pbSorts = append(pbSorts, pbSort)
 	}
@@ -261,20 +319,19 @@ func (s *dynamicServer) AddDynamic(
 	ctx context.Context,
 	req *connect.Request[dynamicv1.AddDynamicRequest],
 ) (*connect.Response[dynamicv1.AddDynamicResponse], error) {
-	d := models.Dynamic{
+	dynamic := models.Dynamic{
 		Title:     req.Msg.Title,
 		UserID:    req.Msg.UserId,
 		Published: false,
 	}
-	err := d.Insert(ctx, db, boil.Infer())
+	err := dynamic.Insert(ctx, db, boil.Infer())
 	if err != nil {
 		log.Printf("failed to add dynamic: %v", err)
 		return nil, err
 	}
 
-	dynamicID := int32(d.DynamicID)
 	res := connect.NewResponse(&dynamicv1.AddDynamicResponse{
-		DynamicId: dynamicID,
+		DynamicId: dynamic.DynamicID,
 	})
 
 	return res, nil
@@ -284,12 +341,11 @@ func (s *dynamicServer) DeleteDynamic(
 	ctx context.Context,
 	req *connect.Request[dynamicv1.DeleteDynamicRequest],
 ) (*connect.Response[dynamicv1.DeleteDynamicResponse], error) {
-	dynamicID := int(req.Msg.DynamicId)
-	d := models.Dynamic{
-		DynamicID: dynamicID,
+	dynamic := models.Dynamic{
+		DynamicID: req.Msg.DynamicId,
 	}
 
-	_, err := d.Delete(ctx, db)
+	_, err := dynamic.Delete(ctx, db)
 	if err != nil {
 		log.Printf("failed to delete dynamic: %v", err)
 		return nil, err
@@ -302,15 +358,14 @@ func (s *dynamicServer) UpdateDynamicStatus(
 	ctx context.Context,
 	req *connect.Request[dynamicv1.UpdateDynamicStatusRequest],
 ) (*connect.Response[dynamicv1.UpdateDynamicStatusResponse], error) {
-	dynamicID := int(req.Msg.DynamicId)
-	d := models.Dynamic{
-		DynamicID: dynamicID,
+	dynamic := models.Dynamic{
+		DynamicID: req.Msg.DynamicId,
+		Title:     req.Msg.Title,
+		Overview:  req.Msg.Overview,
+		Published: req.Msg.Published,
 	}
 
-	d.Title = req.Msg.Title
-	d.Overview = req.Msg.Overview
-	d.Published = req.Msg.Published
-	_, err := d.Update(ctx, db, boil.Infer())
+	_, err := dynamic.Update(ctx, db, boil.Infer())
 	if err != nil {
 		log.Printf("failed to update dynamic status: %v", err)
 		return nil, err
@@ -342,6 +397,43 @@ func ConvertToPostgresTimestamp(date string) time.Time {
 	layout := "2006/01/02"
 	datetime, _ := time.Parse(layout, date)
 	return datetime
+}
+
+func NullStringToEmptyString(str string) string {
+	if reflect.ValueOf(str).IsNil() {
+		return ""
+	}
+	return str
+}
+
+func SetImageData(image *Image) *dynamicv1.ImageData {
+	var pbImage *dynamicv1.ImageData
+	if image != nil {
+		pbImage = &dynamicv1.ImageData{
+			ImageId: image.ImageID,
+			Name:    image.Name,
+			Path:    image.Path,
+		}
+	}
+	return pbImage
+}
+
+func SetTermData(terms []*Term) []*dynamicv1.TermData {
+	var pbTerms []*dynamicv1.TermData
+	for _, term := range terms {
+
+		pbTermImage := SetImageData(term.R.Image)
+
+		pbTerm := &dynamicv1.TermData{
+			TermId: term.TermID,
+			Name:   term.Name,
+			Text:   term.Text,
+			Order:  term.Order,
+			Image:  pbTermImage,
+		}
+		pbTerms = append(pbTerms, pbTerm)
+	}
+	return pbTerms
 }
 
 func main() {

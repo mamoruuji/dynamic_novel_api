@@ -23,7 +23,7 @@ import (
 
 // Font is an object representing the database table.
 type Font struct {
-	FontID    int       `boil:"font_id" json:"font_id" toml:"font_id" yaml:"font_id"`
+	FontID    int32     `boil:"font_id" json:"font_id" toml:"font_id" yaml:"font_id"`
 	Name      string    `boil:"name" json:"name" toml:"name" yaml:"name"`
 	CreatedAt time.Time `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
 	UpdatedAt time.Time `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
@@ -59,12 +59,12 @@ var FontTableColumns = struct {
 // Generated where
 
 var FontWhere = struct {
-	FontID    whereHelperint
+	FontID    whereHelperint32
 	Name      whereHelperstring
 	CreatedAt whereHelpertime_Time
 	UpdatedAt whereHelpertime_Time
 }{
-	FontID:    whereHelperint{field: "\"fonts\".\"font_id\""},
+	FontID:    whereHelperint32{field: "\"fonts\".\"font_id\""},
 	Name:      whereHelperstring{field: "\"fonts\".\"name\""},
 	CreatedAt: whereHelpertime_Time{field: "\"fonts\".\"created_at\""},
 	UpdatedAt: whereHelpertime_Time{field: "\"fonts\".\"updated_at\""},
@@ -439,7 +439,7 @@ func (fontL) LoadSections(ctx context.Context, e boil.ContextExecutor, singular 
 			}
 
 			for _, a := range args {
-				if queries.Equal(a, obj.FontID) {
+				if a == obj.FontID {
 					continue Outer
 				}
 			}
@@ -497,7 +497,7 @@ func (fontL) LoadSections(ctx context.Context, e boil.ContextExecutor, singular 
 
 	for _, foreign := range resultSlice {
 		for _, local := range slice {
-			if queries.Equal(local.FontID, foreign.FontID) {
+			if local.FontID == foreign.FontID {
 				local.R.Sections = append(local.R.Sections, foreign)
 				if foreign.R == nil {
 					foreign.R = &sectionR{}
@@ -519,7 +519,7 @@ func (o *Font) AddSections(ctx context.Context, exec boil.ContextExecutor, inser
 	var err error
 	for _, rel := range related {
 		if insert {
-			queries.Assign(&rel.FontID, o.FontID)
+			rel.FontID = o.FontID
 			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
 				return errors.Wrap(err, "failed to insert into foreign table")
 			}
@@ -540,7 +540,7 @@ func (o *Font) AddSections(ctx context.Context, exec boil.ContextExecutor, inser
 				return errors.Wrap(err, "failed to update foreign table")
 			}
 
-			queries.Assign(&rel.FontID, o.FontID)
+			rel.FontID = o.FontID
 		}
 	}
 
@@ -564,80 +564,6 @@ func (o *Font) AddSections(ctx context.Context, exec boil.ContextExecutor, inser
 	return nil
 }
 
-// SetSections removes all previously related items of the
-// font replacing them completely with the passed
-// in related items, optionally inserting them as new records.
-// Sets o.R.Font's Sections accordingly.
-// Replaces o.R.Sections with related.
-// Sets related.R.Font's Sections accordingly.
-func (o *Font) SetSections(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*Section) error {
-	query := "update \"sections\" set \"font_id\" = null where \"font_id\" = $1"
-	values := []interface{}{o.FontID}
-	if boil.IsDebug(ctx) {
-		writer := boil.DebugWriterFrom(ctx)
-		fmt.Fprintln(writer, query)
-		fmt.Fprintln(writer, values)
-	}
-	_, err := exec.ExecContext(ctx, query, values...)
-	if err != nil {
-		return errors.Wrap(err, "failed to remove relationships before set")
-	}
-
-	if o.R != nil {
-		for _, rel := range o.R.Sections {
-			queries.SetScanner(&rel.FontID, nil)
-			if rel.R == nil {
-				continue
-			}
-
-			rel.R.Font = nil
-		}
-		o.R.Sections = nil
-	}
-
-	return o.AddSections(ctx, exec, insert, related...)
-}
-
-// RemoveSections relationships from objects passed in.
-// Removes related items from R.Sections (uses pointer comparison, removal does not keep order)
-// Sets related.R.Font.
-func (o *Font) RemoveSections(ctx context.Context, exec boil.ContextExecutor, related ...*Section) error {
-	if len(related) == 0 {
-		return nil
-	}
-
-	var err error
-	for _, rel := range related {
-		queries.SetScanner(&rel.FontID, nil)
-		if rel.R != nil {
-			rel.R.Font = nil
-		}
-		if _, err = rel.Update(ctx, exec, boil.Whitelist("font_id")); err != nil {
-			return err
-		}
-	}
-	if o.R == nil {
-		return nil
-	}
-
-	for _, rel := range related {
-		for i, ri := range o.R.Sections {
-			if rel != ri {
-				continue
-			}
-
-			ln := len(o.R.Sections)
-			if ln > 1 && i < ln-1 {
-				o.R.Sections[i] = o.R.Sections[ln-1]
-			}
-			o.R.Sections = o.R.Sections[:ln-1]
-			break
-		}
-	}
-
-	return nil
-}
-
 // Fonts retrieves all the records using an executor.
 func Fonts(mods ...qm.QueryMod) fontQuery {
 	mods = append(mods, qm.From("\"fonts\""))
@@ -651,7 +577,7 @@ func Fonts(mods ...qm.QueryMod) fontQuery {
 
 // FindFont retrieves a single record by ID with an executor.
 // If selectCols is empty Find will return all columns.
-func FindFont(ctx context.Context, exec boil.ContextExecutor, fontID int, selectCols ...string) (*Font, error) {
+func FindFont(ctx context.Context, exec boil.ContextExecutor, fontID int32, selectCols ...string) (*Font, error) {
 	fontObj := &Font{}
 
 	sel := "*"
@@ -1174,7 +1100,7 @@ func (o *FontSlice) ReloadAll(ctx context.Context, exec boil.ContextExecutor) er
 }
 
 // FontExists checks if the Font row exists.
-func FontExists(ctx context.Context, exec boil.ContextExecutor, fontID int) (bool, error) {
+func FontExists(ctx context.Context, exec boil.ContextExecutor, fontID int32) (bool, error) {
 	var exists bool
 	sql := "select exists(select 1 from \"fonts\" where \"font_id\"=$1 limit 1)"
 

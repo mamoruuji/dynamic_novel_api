@@ -23,7 +23,7 @@ import (
 
 // Type is an object representing the database table.
 type Type struct {
-	TypeID    int       `boil:"type_id" json:"type_id" toml:"type_id" yaml:"type_id"`
+	TypeID    int32     `boil:"type_id" json:"type_id" toml:"type_id" yaml:"type_id"`
 	Name      string    `boil:"name" json:"name" toml:"name" yaml:"name"`
 	CreatedAt time.Time `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
 	UpdatedAt time.Time `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
@@ -59,12 +59,12 @@ var TypeTableColumns = struct {
 // Generated where
 
 var TypeWhere = struct {
-	TypeID    whereHelperint
+	TypeID    whereHelperint32
 	Name      whereHelperstring
 	CreatedAt whereHelpertime_Time
 	UpdatedAt whereHelpertime_Time
 }{
-	TypeID:    whereHelperint{field: "\"types\".\"type_id\""},
+	TypeID:    whereHelperint32{field: "\"types\".\"type_id\""},
 	Name:      whereHelperstring{field: "\"types\".\"name\""},
 	CreatedAt: whereHelpertime_Time{field: "\"types\".\"created_at\""},
 	UpdatedAt: whereHelpertime_Time{field: "\"types\".\"updated_at\""},
@@ -439,7 +439,7 @@ func (typeL) LoadSections(ctx context.Context, e boil.ContextExecutor, singular 
 			}
 
 			for _, a := range args {
-				if queries.Equal(a, obj.TypeID) {
+				if a == obj.TypeID {
 					continue Outer
 				}
 			}
@@ -497,7 +497,7 @@ func (typeL) LoadSections(ctx context.Context, e boil.ContextExecutor, singular 
 
 	for _, foreign := range resultSlice {
 		for _, local := range slice {
-			if queries.Equal(local.TypeID, foreign.TypeID) {
+			if local.TypeID == foreign.TypeID {
 				local.R.Sections = append(local.R.Sections, foreign)
 				if foreign.R == nil {
 					foreign.R = &sectionR{}
@@ -519,7 +519,7 @@ func (o *Type) AddSections(ctx context.Context, exec boil.ContextExecutor, inser
 	var err error
 	for _, rel := range related {
 		if insert {
-			queries.Assign(&rel.TypeID, o.TypeID)
+			rel.TypeID = o.TypeID
 			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
 				return errors.Wrap(err, "failed to insert into foreign table")
 			}
@@ -540,7 +540,7 @@ func (o *Type) AddSections(ctx context.Context, exec boil.ContextExecutor, inser
 				return errors.Wrap(err, "failed to update foreign table")
 			}
 
-			queries.Assign(&rel.TypeID, o.TypeID)
+			rel.TypeID = o.TypeID
 		}
 	}
 
@@ -564,80 +564,6 @@ func (o *Type) AddSections(ctx context.Context, exec boil.ContextExecutor, inser
 	return nil
 }
 
-// SetSections removes all previously related items of the
-// type replacing them completely with the passed
-// in related items, optionally inserting them as new records.
-// Sets o.R.Type's Sections accordingly.
-// Replaces o.R.Sections with related.
-// Sets related.R.Type's Sections accordingly.
-func (o *Type) SetSections(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*Section) error {
-	query := "update \"sections\" set \"type_id\" = null where \"type_id\" = $1"
-	values := []interface{}{o.TypeID}
-	if boil.IsDebug(ctx) {
-		writer := boil.DebugWriterFrom(ctx)
-		fmt.Fprintln(writer, query)
-		fmt.Fprintln(writer, values)
-	}
-	_, err := exec.ExecContext(ctx, query, values...)
-	if err != nil {
-		return errors.Wrap(err, "failed to remove relationships before set")
-	}
-
-	if o.R != nil {
-		for _, rel := range o.R.Sections {
-			queries.SetScanner(&rel.TypeID, nil)
-			if rel.R == nil {
-				continue
-			}
-
-			rel.R.Type = nil
-		}
-		o.R.Sections = nil
-	}
-
-	return o.AddSections(ctx, exec, insert, related...)
-}
-
-// RemoveSections relationships from objects passed in.
-// Removes related items from R.Sections (uses pointer comparison, removal does not keep order)
-// Sets related.R.Type.
-func (o *Type) RemoveSections(ctx context.Context, exec boil.ContextExecutor, related ...*Section) error {
-	if len(related) == 0 {
-		return nil
-	}
-
-	var err error
-	for _, rel := range related {
-		queries.SetScanner(&rel.TypeID, nil)
-		if rel.R != nil {
-			rel.R.Type = nil
-		}
-		if _, err = rel.Update(ctx, exec, boil.Whitelist("type_id")); err != nil {
-			return err
-		}
-	}
-	if o.R == nil {
-		return nil
-	}
-
-	for _, rel := range related {
-		for i, ri := range o.R.Sections {
-			if rel != ri {
-				continue
-			}
-
-			ln := len(o.R.Sections)
-			if ln > 1 && i < ln-1 {
-				o.R.Sections[i] = o.R.Sections[ln-1]
-			}
-			o.R.Sections = o.R.Sections[:ln-1]
-			break
-		}
-	}
-
-	return nil
-}
-
 // Types retrieves all the records using an executor.
 func Types(mods ...qm.QueryMod) typeQuery {
 	mods = append(mods, qm.From("\"types\""))
@@ -651,7 +577,7 @@ func Types(mods ...qm.QueryMod) typeQuery {
 
 // FindType retrieves a single record by ID with an executor.
 // If selectCols is empty Find will return all columns.
-func FindType(ctx context.Context, exec boil.ContextExecutor, typeID int, selectCols ...string) (*Type, error) {
+func FindType(ctx context.Context, exec boil.ContextExecutor, typeID int32, selectCols ...string) (*Type, error) {
 	typeObj := &Type{}
 
 	sel := "*"
@@ -1174,7 +1100,7 @@ func (o *TypeSlice) ReloadAll(ctx context.Context, exec boil.ContextExecutor) er
 }
 
 // TypeExists checks if the Type row exists.
-func TypeExists(ctx context.Context, exec boil.ContextExecutor, typeID int) (bool, error) {
+func TypeExists(ctx context.Context, exec boil.ContextExecutor, typeID int32) (bool, error) {
 	var exists bool
 	sql := "select exists(select 1 from \"types\" where \"type_id\"=$1 limit 1)"
 

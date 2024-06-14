@@ -4,7 +4,7 @@ package proto.dynamic.v1;
 
 option go_package = "github.com/mamoruuji/dynamic_novel_api/gen/proto/dynamic/v1;dynamicv1";
 
-message PageData {
+message ListPageData {
   int32 page_id = 1;
   string title = 2;
   int32 order = 3;
@@ -14,7 +14,7 @@ message PageData {
 message ListPagesRequest {}
 
 message ListPagesResponse {
-  repeated PageData pages = 1;
+  repeated ListPageData pages = 1;
 }
 
 message AddPageRequest {

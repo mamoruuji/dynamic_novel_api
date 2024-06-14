@@ -104,7 +104,7 @@ go 1.21
 ```
 curl \
 --header "Content-Type: application/json" \
---data '{"dynamic_id": "3"}' \
+--data '{"dynamic_id": "2"}' \
 http://localhost:8080/proto.dynamic.v1.DynamicService/GetDynamic
 ```
 
@@ -131,3 +131,11 @@ inport(
 )
 spew.Dump(hoge)
 ```
+sqlboiler psql
+buf generate
+
+sectionデータ取得
+　画像データ取得
+　　セクションと紐づく画像パス情報取得
+　　　ユーザ/フォルダ階層/画像名
+　　　フォルダ階層情報からS3コマンド実行して画像データ取得

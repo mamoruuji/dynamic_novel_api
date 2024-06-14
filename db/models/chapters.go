@@ -23,10 +23,10 @@ import (
 
 // Chapter is an object representing the database table.
 type Chapter struct {
-	ChapterID int       `boil:"chapter_id" json:"chapter_id" toml:"chapter_id" yaml:"chapter_id"`
+	ChapterID int32     `boil:"chapter_id" json:"chapter_id" toml:"chapter_id" yaml:"chapter_id"`
 	Title     string    `boil:"title" json:"title" toml:"title" yaml:"title"`
-	Order     int       `boil:"order" json:"order" toml:"order" yaml:"order"`
-	DynamicID int       `boil:"dynamic_id" json:"dynamic_id" toml:"dynamic_id" yaml:"dynamic_id"`
+	Order     int32     `boil:"order" json:"order" toml:"order" yaml:"order"`
+	DynamicID int32     `boil:"dynamic_id" json:"dynamic_id" toml:"dynamic_id" yaml:"dynamic_id"`
 	CreatedAt time.Time `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
 	UpdatedAt time.Time `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
 
@@ -69,37 +69,37 @@ var ChapterTableColumns = struct {
 // Generated where
 
 var ChapterWhere = struct {
-	ChapterID whereHelperint
+	ChapterID whereHelperint32
 	Title     whereHelperstring
-	Order     whereHelperint
-	DynamicID whereHelperint
+	Order     whereHelperint32
+	DynamicID whereHelperint32
 	CreatedAt whereHelpertime_Time
 	UpdatedAt whereHelpertime_Time
 }{
-	ChapterID: whereHelperint{field: "\"chapters\".\"chapter_id\""},
+	ChapterID: whereHelperint32{field: "\"chapters\".\"chapter_id\""},
 	Title:     whereHelperstring{field: "\"chapters\".\"title\""},
-	Order:     whereHelperint{field: "\"chapters\".\"order\""},
-	DynamicID: whereHelperint{field: "\"chapters\".\"dynamic_id\""},
+	Order:     whereHelperint32{field: "\"chapters\".\"order\""},
+	DynamicID: whereHelperint32{field: "\"chapters\".\"dynamic_id\""},
 	CreatedAt: whereHelpertime_Time{field: "\"chapters\".\"created_at\""},
 	UpdatedAt: whereHelpertime_Time{field: "\"chapters\".\"updated_at\""},
 }
 
 // ChapterRels is where relationship names are stored.
 var ChapterRels = struct {
-	Dynamic      string
-	ChapterTerms string
-	Pages        string
+	Dynamic string
+	Pages   string
+	Terms   string
 }{
-	Dynamic:      "Dynamic",
-	ChapterTerms: "ChapterTerms",
-	Pages:        "Pages",
+	Dynamic: "Dynamic",
+	Pages:   "Pages",
+	Terms:   "Terms",
 }
 
 // chapterR is where relationships are stored.
 type chapterR struct {
-	Dynamic      *Dynamic         `boil:"Dynamic" json:"Dynamic" toml:"Dynamic" yaml:"Dynamic"`
-	ChapterTerms ChapterTermSlice `boil:"ChapterTerms" json:"ChapterTerms" toml:"ChapterTerms" yaml:"ChapterTerms"`
-	Pages        PageSlice        `boil:"Pages" json:"Pages" toml:"Pages" yaml:"Pages"`
+	Dynamic *Dynamic  `boil:"Dynamic" json:"Dynamic" toml:"Dynamic" yaml:"Dynamic"`
+	Pages   PageSlice `boil:"Pages" json:"Pages" toml:"Pages" yaml:"Pages"`
+	Terms   TermSlice `boil:"Terms" json:"Terms" toml:"Terms" yaml:"Terms"`
 }
 
 // NewStruct creates a new relationship struct
@@ -114,18 +114,18 @@ func (r *chapterR) GetDynamic() *Dynamic {
 	return r.Dynamic
 }
 
-func (r *chapterR) GetChapterTerms() ChapterTermSlice {
-	if r == nil {
-		return nil
-	}
-	return r.ChapterTerms
-}
-
 func (r *chapterR) GetPages() PageSlice {
 	if r == nil {
 		return nil
 	}
 	return r.Pages
+}
+
+func (r *chapterR) GetTerms() TermSlice {
+	if r == nil {
+		return nil
+	}
+	return r.Terms
 }
 
 // chapterL is where Load methods for each relationship are stored.
@@ -428,20 +428,6 @@ func (o *Chapter) Dynamic(mods ...qm.QueryMod) dynamicQuery {
 	return Dynamics(queryMods...)
 }
 
-// ChapterTerms retrieves all the chapter_term's ChapterTerms with an executor.
-func (o *Chapter) ChapterTerms(mods ...qm.QueryMod) chapterTermQuery {
-	var queryMods []qm.QueryMod
-	if len(mods) != 0 {
-		queryMods = append(queryMods, mods...)
-	}
-
-	queryMods = append(queryMods,
-		qm.Where("\"chapter_terms\".\"chapter_id\"=?", o.ChapterID),
-	)
-
-	return ChapterTerms(queryMods...)
-}
-
 // Pages retrieves all the page's Pages with an executor.
 func (o *Chapter) Pages(mods ...qm.QueryMod) pageQuery {
 	var queryMods []qm.QueryMod
@@ -454,6 +440,20 @@ func (o *Chapter) Pages(mods ...qm.QueryMod) pageQuery {
 	)
 
 	return Pages(queryMods...)
+}
+
+// Terms retrieves all the term's Terms with an executor.
+func (o *Chapter) Terms(mods ...qm.QueryMod) termQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"terms\".\"chapter_id\"=?", o.ChapterID),
+	)
+
+	return Terms(queryMods...)
 }
 
 // LoadDynamic allows an eager lookup of values, cached into the
@@ -576,120 +576,6 @@ func (chapterL) LoadDynamic(ctx context.Context, e boil.ContextExecutor, singula
 	return nil
 }
 
-// LoadChapterTerms allows an eager lookup of values, cached into the
-// loaded structs of the objects. This is for a 1-M or N-M relationship.
-func (chapterL) LoadChapterTerms(ctx context.Context, e boil.ContextExecutor, singular bool, maybeChapter interface{}, mods queries.Applicator) error {
-	var slice []*Chapter
-	var object *Chapter
-
-	if singular {
-		var ok bool
-		object, ok = maybeChapter.(*Chapter)
-		if !ok {
-			object = new(Chapter)
-			ok = queries.SetFromEmbeddedStruct(&object, &maybeChapter)
-			if !ok {
-				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeChapter))
-			}
-		}
-	} else {
-		s, ok := maybeChapter.(*[]*Chapter)
-		if ok {
-			slice = *s
-		} else {
-			ok = queries.SetFromEmbeddedStruct(&slice, maybeChapter)
-			if !ok {
-				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeChapter))
-			}
-		}
-	}
-
-	args := make([]interface{}, 0, 1)
-	if singular {
-		if object.R == nil {
-			object.R = &chapterR{}
-		}
-		args = append(args, object.ChapterID)
-	} else {
-	Outer:
-		for _, obj := range slice {
-			if obj.R == nil {
-				obj.R = &chapterR{}
-			}
-
-			for _, a := range args {
-				if a == obj.ChapterID {
-					continue Outer
-				}
-			}
-
-			args = append(args, obj.ChapterID)
-		}
-	}
-
-	if len(args) == 0 {
-		return nil
-	}
-
-	query := NewQuery(
-		qm.From(`chapter_terms`),
-		qm.WhereIn(`chapter_terms.chapter_id in ?`, args...),
-	)
-	if mods != nil {
-		mods.Apply(query)
-	}
-
-	results, err := query.QueryContext(ctx, e)
-	if err != nil {
-		return errors.Wrap(err, "failed to eager load chapter_terms")
-	}
-
-	var resultSlice []*ChapterTerm
-	if err = queries.Bind(results, &resultSlice); err != nil {
-		return errors.Wrap(err, "failed to bind eager loaded slice chapter_terms")
-	}
-
-	if err = results.Close(); err != nil {
-		return errors.Wrap(err, "failed to close results in eager load on chapter_terms")
-	}
-	if err = results.Err(); err != nil {
-		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for chapter_terms")
-	}
-
-	if len(chapterTermAfterSelectHooks) != 0 {
-		for _, obj := range resultSlice {
-			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
-				return err
-			}
-		}
-	}
-	if singular {
-		object.R.ChapterTerms = resultSlice
-		for _, foreign := range resultSlice {
-			if foreign.R == nil {
-				foreign.R = &chapterTermR{}
-			}
-			foreign.R.Chapter = object
-		}
-		return nil
-	}
-
-	for _, foreign := range resultSlice {
-		for _, local := range slice {
-			if local.ChapterID == foreign.ChapterID {
-				local.R.ChapterTerms = append(local.R.ChapterTerms, foreign)
-				if foreign.R == nil {
-					foreign.R = &chapterTermR{}
-				}
-				foreign.R.Chapter = local
-				break
-			}
-		}
-	}
-
-	return nil
-}
-
 // LoadPages allows an eager lookup of values, cached into the
 // loaded structs of the objects. This is for a 1-M or N-M relationship.
 func (chapterL) LoadPages(ctx context.Context, e boil.ContextExecutor, singular bool, maybeChapter interface{}, mods queries.Applicator) error {
@@ -804,6 +690,120 @@ func (chapterL) LoadPages(ctx context.Context, e boil.ContextExecutor, singular 
 	return nil
 }
 
+// LoadTerms allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (chapterL) LoadTerms(ctx context.Context, e boil.ContextExecutor, singular bool, maybeChapter interface{}, mods queries.Applicator) error {
+	var slice []*Chapter
+	var object *Chapter
+
+	if singular {
+		var ok bool
+		object, ok = maybeChapter.(*Chapter)
+		if !ok {
+			object = new(Chapter)
+			ok = queries.SetFromEmbeddedStruct(&object, &maybeChapter)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeChapter))
+			}
+		}
+	} else {
+		s, ok := maybeChapter.(*[]*Chapter)
+		if ok {
+			slice = *s
+		} else {
+			ok = queries.SetFromEmbeddedStruct(&slice, maybeChapter)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeChapter))
+			}
+		}
+	}
+
+	args := make([]interface{}, 0, 1)
+	if singular {
+		if object.R == nil {
+			object.R = &chapterR{}
+		}
+		args = append(args, object.ChapterID)
+	} else {
+	Outer:
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &chapterR{}
+			}
+
+			for _, a := range args {
+				if queries.Equal(a, obj.ChapterID) {
+					continue Outer
+				}
+			}
+
+			args = append(args, obj.ChapterID)
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	query := NewQuery(
+		qm.From(`terms`),
+		qm.WhereIn(`terms.chapter_id in ?`, args...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load terms")
+	}
+
+	var resultSlice []*Term
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice terms")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on terms")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for terms")
+	}
+
+	if len(termAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.Terms = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &termR{}
+			}
+			foreign.R.Chapter = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if queries.Equal(local.ChapterID, foreign.ChapterID) {
+				local.R.Terms = append(local.R.Terms, foreign)
+				if foreign.R == nil {
+					foreign.R = &termR{}
+				}
+				foreign.R.Chapter = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
 // SetDynamic of the chapter to the related item.
 // Sets o.R.Dynamic to related.
 // Adds o to related.R.Chapters.
@@ -848,59 +848,6 @@ func (o *Chapter) SetDynamic(ctx context.Context, exec boil.ContextExecutor, ins
 		related.R.Chapters = append(related.R.Chapters, o)
 	}
 
-	return nil
-}
-
-// AddChapterTerms adds the given related objects to the existing relationships
-// of the chapter, optionally inserting them as new records.
-// Appends related to o.R.ChapterTerms.
-// Sets related.R.Chapter appropriately.
-func (o *Chapter) AddChapterTerms(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*ChapterTerm) error {
-	var err error
-	for _, rel := range related {
-		if insert {
-			rel.ChapterID = o.ChapterID
-			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
-				return errors.Wrap(err, "failed to insert into foreign table")
-			}
-		} else {
-			updateQuery := fmt.Sprintf(
-				"UPDATE \"chapter_terms\" SET %s WHERE %s",
-				strmangle.SetParamNames("\"", "\"", 1, []string{"chapter_id"}),
-				strmangle.WhereClause("\"", "\"", 2, chapterTermPrimaryKeyColumns),
-			)
-			values := []interface{}{o.ChapterID, rel.ChapterTermID}
-
-			if boil.IsDebug(ctx) {
-				writer := boil.DebugWriterFrom(ctx)
-				fmt.Fprintln(writer, updateQuery)
-				fmt.Fprintln(writer, values)
-			}
-			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
-				return errors.Wrap(err, "failed to update foreign table")
-			}
-
-			rel.ChapterID = o.ChapterID
-		}
-	}
-
-	if o.R == nil {
-		o.R = &chapterR{
-			ChapterTerms: related,
-		}
-	} else {
-		o.R.ChapterTerms = append(o.R.ChapterTerms, related...)
-	}
-
-	for _, rel := range related {
-		if rel.R == nil {
-			rel.R = &chapterTermR{
-				Chapter: o,
-			}
-		} else {
-			rel.R.Chapter = o
-		}
-	}
 	return nil
 }
 
@@ -957,6 +904,133 @@ func (o *Chapter) AddPages(ctx context.Context, exec boil.ContextExecutor, inser
 	return nil
 }
 
+// AddTerms adds the given related objects to the existing relationships
+// of the chapter, optionally inserting them as new records.
+// Appends related to o.R.Terms.
+// Sets related.R.Chapter appropriately.
+func (o *Chapter) AddTerms(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*Term) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			queries.Assign(&rel.ChapterID, o.ChapterID)
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"terms\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"chapter_id"}),
+				strmangle.WhereClause("\"", "\"", 2, termPrimaryKeyColumns),
+			)
+			values := []interface{}{o.ChapterID, rel.TermID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			queries.Assign(&rel.ChapterID, o.ChapterID)
+		}
+	}
+
+	if o.R == nil {
+		o.R = &chapterR{
+			Terms: related,
+		}
+	} else {
+		o.R.Terms = append(o.R.Terms, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &termR{
+				Chapter: o,
+			}
+		} else {
+			rel.R.Chapter = o
+		}
+	}
+	return nil
+}
+
+// SetTerms removes all previously related items of the
+// chapter replacing them completely with the passed
+// in related items, optionally inserting them as new records.
+// Sets o.R.Chapter's Terms accordingly.
+// Replaces o.R.Terms with related.
+// Sets related.R.Chapter's Terms accordingly.
+func (o *Chapter) SetTerms(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*Term) error {
+	query := "update \"terms\" set \"chapter_id\" = null where \"chapter_id\" = $1"
+	values := []interface{}{o.ChapterID}
+	if boil.IsDebug(ctx) {
+		writer := boil.DebugWriterFrom(ctx)
+		fmt.Fprintln(writer, query)
+		fmt.Fprintln(writer, values)
+	}
+	_, err := exec.ExecContext(ctx, query, values...)
+	if err != nil {
+		return errors.Wrap(err, "failed to remove relationships before set")
+	}
+
+	if o.R != nil {
+		for _, rel := range o.R.Terms {
+			queries.SetScanner(&rel.ChapterID, nil)
+			if rel.R == nil {
+				continue
+			}
+
+			rel.R.Chapter = nil
+		}
+		o.R.Terms = nil
+	}
+
+	return o.AddTerms(ctx, exec, insert, related...)
+}
+
+// RemoveTerms relationships from objects passed in.
+// Removes related items from R.Terms (uses pointer comparison, removal does not keep order)
+// Sets related.R.Chapter.
+func (o *Chapter) RemoveTerms(ctx context.Context, exec boil.ContextExecutor, related ...*Term) error {
+	if len(related) == 0 {
+		return nil
+	}
+
+	var err error
+	for _, rel := range related {
+		queries.SetScanner(&rel.ChapterID, nil)
+		if rel.R != nil {
+			rel.R.Chapter = nil
+		}
+		if _, err = rel.Update(ctx, exec, boil.Whitelist("chapter_id")); err != nil {
+			return err
+		}
+	}
+	if o.R == nil {
+		return nil
+	}
+
+	for _, rel := range related {
+		for i, ri := range o.R.Terms {
+			if rel != ri {
+				continue
+			}
+
+			ln := len(o.R.Terms)
+			if ln > 1 && i < ln-1 {
+				o.R.Terms[i] = o.R.Terms[ln-1]
+			}
+			o.R.Terms = o.R.Terms[:ln-1]
+			break
+		}
+	}
+
+	return nil
+}
+
 // Chapters retrieves all the records using an executor.
 func Chapters(mods ...qm.QueryMod) chapterQuery {
 	mods = append(mods, qm.From("\"chapters\""))
@@ -970,7 +1044,7 @@ func Chapters(mods ...qm.QueryMod) chapterQuery {
 
 // FindChapter retrieves a single record by ID with an executor.
 // If selectCols is empty Find will return all columns.
-func FindChapter(ctx context.Context, exec boil.ContextExecutor, chapterID int, selectCols ...string) (*Chapter, error) {
+func FindChapter(ctx context.Context, exec boil.ContextExecutor, chapterID int32, selectCols ...string) (*Chapter, error) {
 	chapterObj := &Chapter{}
 
 	sel := "*"
@@ -1493,7 +1567,7 @@ func (o *ChapterSlice) ReloadAll(ctx context.Context, exec boil.ContextExecutor)
 }
 
 // ChapterExists checks if the Chapter row exists.
-func ChapterExists(ctx context.Context, exec boil.ContextExecutor, chapterID int) (bool, error) {
+func ChapterExists(ctx context.Context, exec boil.ContextExecutor, chapterID int32) (bool, error) {
 	var exists bool
 	sql := "select exists(select 1 from \"chapters\" where \"chapter_id\"=$1 limit 1)"
 

@@ -23,9 +23,9 @@ import (
 
 // Mark is an object representing the database table.
 type Mark struct {
-	MarkID    int       `boil:"mark_id" json:"mark_id" toml:"mark_id" yaml:"mark_id"`
+	MarkID    int32     `boil:"mark_id" json:"mark_id" toml:"mark_id" yaml:"mark_id"`
 	UserID    string    `boil:"user_id" json:"user_id" toml:"user_id" yaml:"user_id"`
-	DynamicID int       `boil:"dynamic_id" json:"dynamic_id" toml:"dynamic_id" yaml:"dynamic_id"`
+	DynamicID int32     `boil:"dynamic_id" json:"dynamic_id" toml:"dynamic_id" yaml:"dynamic_id"`
 	CreatedAt time.Time `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
 	UpdatedAt time.Time `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
 
@@ -64,15 +64,15 @@ var MarkTableColumns = struct {
 // Generated where
 
 var MarkWhere = struct {
-	MarkID    whereHelperint
+	MarkID    whereHelperint32
 	UserID    whereHelperstring
-	DynamicID whereHelperint
+	DynamicID whereHelperint32
 	CreatedAt whereHelpertime_Time
 	UpdatedAt whereHelpertime_Time
 }{
-	MarkID:    whereHelperint{field: "\"marks\".\"mark_id\""},
+	MarkID:    whereHelperint32{field: "\"marks\".\"mark_id\""},
 	UserID:    whereHelperstring{field: "\"marks\".\"user_id\""},
-	DynamicID: whereHelperint{field: "\"marks\".\"dynamic_id\""},
+	DynamicID: whereHelperint32{field: "\"marks\".\"dynamic_id\""},
 	CreatedAt: whereHelpertime_Time{field: "\"marks\".\"created_at\""},
 	UpdatedAt: whereHelpertime_Time{field: "\"marks\".\"updated_at\""},
 }
@@ -769,7 +769,7 @@ func Marks(mods ...qm.QueryMod) markQuery {
 
 // FindMark retrieves a single record by ID with an executor.
 // If selectCols is empty Find will return all columns.
-func FindMark(ctx context.Context, exec boil.ContextExecutor, markID int, selectCols ...string) (*Mark, error) {
+func FindMark(ctx context.Context, exec boil.ContextExecutor, markID int32, selectCols ...string) (*Mark, error) {
 	markObj := &Mark{}
 
 	sel := "*"
@@ -1292,7 +1292,7 @@ func (o *MarkSlice) ReloadAll(ctx context.Context, exec boil.ContextExecutor) er
 }
 
 // MarkExists checks if the Mark row exists.
-func MarkExists(ctx context.Context, exec boil.ContextExecutor, markID int) (bool, error) {
+func MarkExists(ctx context.Context, exec boil.ContextExecutor, markID int32) (bool, error) {
 	var exists bool
 	sql := "select exists(select 1 from \"marks\" where \"mark_id\"=$1 limit 1)"
 

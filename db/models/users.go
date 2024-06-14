@@ -79,26 +79,29 @@ var UserWhere = struct {
 
 // UserRels is where relationship names are stored.
 var UserRels = struct {
-	Dynamics    string
-	Folders     string
-	Images      string
-	Impressions string
-	Marks       string
+	Dynamics      string
+	Folders       string
+	ImageOfCovers string
+	Images        string
+	Impressions   string
+	Marks         string
 }{
-	Dynamics:    "Dynamics",
-	Folders:     "Folders",
-	Images:      "Images",
-	Impressions: "Impressions",
-	Marks:       "Marks",
+	Dynamics:      "Dynamics",
+	Folders:       "Folders",
+	ImageOfCovers: "ImageOfCovers",
+	Images:        "Images",
+	Impressions:   "Impressions",
+	Marks:         "Marks",
 }
 
 // userR is where relationships are stored.
 type userR struct {
-	Dynamics    DynamicSlice    `boil:"Dynamics" json:"Dynamics" toml:"Dynamics" yaml:"Dynamics"`
-	Folders     FolderSlice     `boil:"Folders" json:"Folders" toml:"Folders" yaml:"Folders"`
-	Images      ImageSlice      `boil:"Images" json:"Images" toml:"Images" yaml:"Images"`
-	Impressions ImpressionSlice `boil:"Impressions" json:"Impressions" toml:"Impressions" yaml:"Impressions"`
-	Marks       MarkSlice       `boil:"Marks" json:"Marks" toml:"Marks" yaml:"Marks"`
+	Dynamics      DynamicSlice      `boil:"Dynamics" json:"Dynamics" toml:"Dynamics" yaml:"Dynamics"`
+	Folders       FolderSlice       `boil:"Folders" json:"Folders" toml:"Folders" yaml:"Folders"`
+	ImageOfCovers ImageOfCoverSlice `boil:"ImageOfCovers" json:"ImageOfCovers" toml:"ImageOfCovers" yaml:"ImageOfCovers"`
+	Images        ImageSlice        `boil:"Images" json:"Images" toml:"Images" yaml:"Images"`
+	Impressions   ImpressionSlice   `boil:"Impressions" json:"Impressions" toml:"Impressions" yaml:"Impressions"`
+	Marks         MarkSlice         `boil:"Marks" json:"Marks" toml:"Marks" yaml:"Marks"`
 }
 
 // NewStruct creates a new relationship struct
@@ -118,6 +121,13 @@ func (r *userR) GetFolders() FolderSlice {
 		return nil
 	}
 	return r.Folders
+}
+
+func (r *userR) GetImageOfCovers() ImageOfCoverSlice {
+	if r == nil {
+		return nil
+	}
+	return r.ImageOfCovers
 }
 
 func (r *userR) GetImages() ImageSlice {
@@ -458,6 +468,20 @@ func (o *User) Folders(mods ...qm.QueryMod) folderQuery {
 	return Folders(queryMods...)
 }
 
+// ImageOfCovers retrieves all the image_of_cover's ImageOfCovers with an executor.
+func (o *User) ImageOfCovers(mods ...qm.QueryMod) imageOfCoverQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"image_of_cover\".\"user_id\"=?", o.UserID),
+	)
+
+	return ImageOfCovers(queryMods...)
+}
+
 // Images retrieves all the image's Images with an executor.
 func (o *User) Images(mods ...qm.QueryMod) imageQuery {
 	var queryMods []qm.QueryMod
@@ -718,6 +742,120 @@ func (userL) LoadFolders(ctx context.Context, e boil.ContextExecutor, singular b
 				local.R.Folders = append(local.R.Folders, foreign)
 				if foreign.R == nil {
 					foreign.R = &folderR{}
+				}
+				foreign.R.User = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// LoadImageOfCovers allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (userL) LoadImageOfCovers(ctx context.Context, e boil.ContextExecutor, singular bool, maybeUser interface{}, mods queries.Applicator) error {
+	var slice []*User
+	var object *User
+
+	if singular {
+		var ok bool
+		object, ok = maybeUser.(*User)
+		if !ok {
+			object = new(User)
+			ok = queries.SetFromEmbeddedStruct(&object, &maybeUser)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeUser))
+			}
+		}
+	} else {
+		s, ok := maybeUser.(*[]*User)
+		if ok {
+			slice = *s
+		} else {
+			ok = queries.SetFromEmbeddedStruct(&slice, maybeUser)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeUser))
+			}
+		}
+	}
+
+	args := make([]interface{}, 0, 1)
+	if singular {
+		if object.R == nil {
+			object.R = &userR{}
+		}
+		args = append(args, object.UserID)
+	} else {
+	Outer:
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &userR{}
+			}
+
+			for _, a := range args {
+				if a == obj.UserID {
+					continue Outer
+				}
+			}
+
+			args = append(args, obj.UserID)
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	query := NewQuery(
+		qm.From(`image_of_cover`),
+		qm.WhereIn(`image_of_cover.user_id in ?`, args...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load image_of_cover")
+	}
+
+	var resultSlice []*ImageOfCover
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice image_of_cover")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on image_of_cover")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for image_of_cover")
+	}
+
+	if len(imageOfCoverAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.ImageOfCovers = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &imageOfCoverR{}
+			}
+			foreign.R.User = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if local.UserID == foreign.UserID {
+				local.R.ImageOfCovers = append(local.R.ImageOfCovers, foreign)
+				if foreign.R == nil {
+					foreign.R = &imageOfCoverR{}
 				}
 				foreign.R.User = local
 				break
@@ -1167,6 +1305,59 @@ func (o *User) AddFolders(ctx context.Context, exec boil.ContextExecutor, insert
 	for _, rel := range related {
 		if rel.R == nil {
 			rel.R = &folderR{
+				User: o,
+			}
+		} else {
+			rel.R.User = o
+		}
+	}
+	return nil
+}
+
+// AddImageOfCovers adds the given related objects to the existing relationships
+// of the user, optionally inserting them as new records.
+// Appends related to o.R.ImageOfCovers.
+// Sets related.R.User appropriately.
+func (o *User) AddImageOfCovers(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*ImageOfCover) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			rel.UserID = o.UserID
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"image_of_cover\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"user_id"}),
+				strmangle.WhereClause("\"", "\"", 2, imageOfCoverPrimaryKeyColumns),
+			)
+			values := []interface{}{o.UserID, rel.CoverImageID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			rel.UserID = o.UserID
+		}
+	}
+
+	if o.R == nil {
+		o.R = &userR{
+			ImageOfCovers: related,
+		}
+	} else {
+		o.R.ImageOfCovers = append(o.R.ImageOfCovers, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &imageOfCoverR{
 				User: o,
 			}
 		} else {

@@ -8,13 +8,9 @@ import "testing"
 func TestUpsert(t *testing.T) {
 	t.Run("PrismaMigrations", testPrismaMigrationsUpsert)
 
-	t.Run("Bubbles", testBubblesUpsert)
-
-	t.Run("ChapterTerms", testChapterTermsUpsert)
-
 	t.Run("Chapters", testChaptersUpsert)
 
-	t.Run("DynamicTerms", testDynamicTermsUpsert)
+	t.Run("Colors", testColorsUpsert)
 
 	t.Run("Dynamics", testDynamicsUpsert)
 
@@ -24,25 +20,23 @@ func TestUpsert(t *testing.T) {
 
 	t.Run("Fonts", testFontsUpsert)
 
+	t.Run("ImageOfCovers", testImageOfCoversUpsert)
+
 	t.Run("Images", testImagesUpsert)
 
 	t.Run("Impressions", testImpressionsUpsert)
 
 	t.Run("Marks", testMarksUpsert)
 
-	t.Run("PageTerms", testPageTermsUpsert)
-
 	t.Run("Pages", testPagesUpsert)
-
-	t.Run("Positions", testPositionsUpsert)
-
-	t.Run("SectionTerms", testSectionTermsUpsert)
 
 	t.Run("Sections", testSectionsUpsert)
 
 	t.Run("Sorts", testSortsUpsert)
 
 	t.Run("Tags", testTagsUpsert)
+
+	t.Run("Terms", testTermsUpsert)
 
 	t.Run("Types", testTypesUpsert)
 

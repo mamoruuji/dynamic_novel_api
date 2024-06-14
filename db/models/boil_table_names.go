@@ -5,46 +5,40 @@ package models
 
 var TableNames = struct {
 	PrismaMigrations string
-	Bubbles          string
-	ChapterTerms     string
 	Chapters         string
-	DynamicTerms     string
+	Colors           string
 	Dynamics         string
 	DynamicsOnTags   string
 	Folders          string
 	Fonts            string
+	ImageOfCover     string
 	Images           string
 	Impressions      string
 	Marks            string
-	PageTerms        string
 	Pages            string
-	Positions        string
-	SectionTerms     string
 	Sections         string
 	Sorts            string
 	Tags             string
+	Terms            string
 	Types            string
 	Users            string
 }{
 	PrismaMigrations: "_prisma_migrations",
-	Bubbles:          "bubbles",
-	ChapterTerms:     "chapter_terms",
 	Chapters:         "chapters",
-	DynamicTerms:     "dynamic_terms",
+	Colors:           "colors",
 	Dynamics:         "dynamics",
 	DynamicsOnTags:   "dynamics_on_tags",
 	Folders:          "folders",
 	Fonts:            "fonts",
+	ImageOfCover:     "image_of_cover",
 	Images:           "images",
 	Impressions:      "impressions",
 	Marks:            "marks",
-	PageTerms:        "page_terms",
 	Pages:            "pages",
-	Positions:        "positions",
-	SectionTerms:     "section_terms",
 	Sections:         "sections",
 	Sorts:            "sorts",
 	Tags:             "tags",
+	Terms:            "terms",
 	Types:            "types",
 	Users:            "users",
 }

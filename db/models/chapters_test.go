@@ -494,84 +494,6 @@ func testChaptersInsertWhitelist(t *testing.T) {
 	}
 }
 
-func testChapterToManyChapterTerms(t *testing.T) {
-	var err error
-	ctx := context.Background()
-	tx := MustTx(boil.BeginTx(ctx, nil))
-	defer func() { _ = tx.Rollback() }()
-
-	var a Chapter
-	var b, c ChapterTerm
-
-	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, chapterDBTypes, true, chapterColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Chapter struct: %s", err)
-	}
-
-	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	if err = randomize.Struct(seed, &b, chapterTermDBTypes, false, chapterTermColumnsWithDefault...); err != nil {
-		t.Fatal(err)
-	}
-	if err = randomize.Struct(seed, &c, chapterTermDBTypes, false, chapterTermColumnsWithDefault...); err != nil {
-		t.Fatal(err)
-	}
-
-	b.ChapterID = a.ChapterID
-	c.ChapterID = a.ChapterID
-
-	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	check, err := a.ChapterTerms().All(ctx, tx)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	bFound, cFound := false, false
-	for _, v := range check {
-		if v.ChapterID == b.ChapterID {
-			bFound = true
-		}
-		if v.ChapterID == c.ChapterID {
-			cFound = true
-		}
-	}
-
-	if !bFound {
-		t.Error("expected to find b")
-	}
-	if !cFound {
-		t.Error("expected to find c")
-	}
-
-	slice := ChapterSlice{&a}
-	if err = a.L.LoadChapterTerms(ctx, tx, false, (*[]*Chapter)(&slice), nil); err != nil {
-		t.Fatal(err)
-	}
-	if got := len(a.R.ChapterTerms); got != 2 {
-		t.Error("number of eager loaded records wrong, got:", got)
-	}
-
-	a.R.ChapterTerms = nil
-	if err = a.L.LoadChapterTerms(ctx, tx, true, &a, nil); err != nil {
-		t.Fatal(err)
-	}
-	if got := len(a.R.ChapterTerms); got != 2 {
-		t.Error("number of eager loaded records wrong, got:", got)
-	}
-
-	if t.Failed() {
-		t.Logf("%#v", check)
-	}
-}
-
 func testChapterToManyPages(t *testing.T) {
 	var err error
 	ctx := context.Background()
@@ -650,30 +572,33 @@ func testChapterToManyPages(t *testing.T) {
 	}
 }
 
-func testChapterToManyAddOpChapterTerms(t *testing.T) {
+func testChapterToManyTerms(t *testing.T) {
 	var err error
-
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
 
 	var a Chapter
-	var b, c, d, e ChapterTerm
+	var b, c Term
 
 	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, chapterDBTypes, false, strmangle.SetComplement(chapterPrimaryKeyColumns, chapterColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-	foreigners := []*ChapterTerm{&b, &c, &d, &e}
-	for _, x := range foreigners {
-		if err = randomize.Struct(seed, x, chapterTermDBTypes, false, strmangle.SetComplement(chapterTermPrimaryKeyColumns, chapterTermColumnsWithoutDefault)...); err != nil {
-			t.Fatal(err)
-		}
+	if err = randomize.Struct(seed, &a, chapterDBTypes, true, chapterColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Chapter struct: %s", err)
 	}
 
 	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Fatal(err)
 	}
+
+	if err = randomize.Struct(seed, &b, termDBTypes, false, termColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &c, termDBTypes, false, termColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+
+	queries.Assign(&b.ChapterID, a.ChapterID)
+	queries.Assign(&c.ChapterID, a.ChapterID)
 	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Fatal(err)
 	}
@@ -681,50 +606,49 @@ func testChapterToManyAddOpChapterTerms(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	foreignersSplitByInsertion := [][]*ChapterTerm{
-		{&b, &c},
-		{&d, &e},
+	check, err := a.Terms().All(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
 	}
 
-	for i, x := range foreignersSplitByInsertion {
-		err = a.AddChapterTerms(ctx, tx, i != 0, x...)
-		if err != nil {
-			t.Fatal(err)
+	bFound, cFound := false, false
+	for _, v := range check {
+		if queries.Equal(v.ChapterID, b.ChapterID) {
+			bFound = true
 		}
+		if queries.Equal(v.ChapterID, c.ChapterID) {
+			cFound = true
+		}
+	}
 
-		first := x[0]
-		second := x[1]
+	if !bFound {
+		t.Error("expected to find b")
+	}
+	if !cFound {
+		t.Error("expected to find c")
+	}
 
-		if a.ChapterID != first.ChapterID {
-			t.Error("foreign key was wrong value", a.ChapterID, first.ChapterID)
-		}
-		if a.ChapterID != second.ChapterID {
-			t.Error("foreign key was wrong value", a.ChapterID, second.ChapterID)
-		}
+	slice := ChapterSlice{&a}
+	if err = a.L.LoadTerms(ctx, tx, false, (*[]*Chapter)(&slice), nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.Terms); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
 
-		if first.R.Chapter != &a {
-			t.Error("relationship was not added properly to the foreign slice")
-		}
-		if second.R.Chapter != &a {
-			t.Error("relationship was not added properly to the foreign slice")
-		}
+	a.R.Terms = nil
+	if err = a.L.LoadTerms(ctx, tx, true, &a, nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.Terms); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
 
-		if a.R.ChapterTerms[i*2] != first {
-			t.Error("relationship struct slice not set to correct value")
-		}
-		if a.R.ChapterTerms[i*2+1] != second {
-			t.Error("relationship struct slice not set to correct value")
-		}
-
-		count, err := a.ChapterTerms().Count(ctx, tx)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if want := int64((i + 1) * 2); count != want {
-			t.Error("want", want, "got", count)
-		}
+	if t.Failed() {
+		t.Logf("%#v", check)
 	}
 }
+
 func testChapterToManyAddOpPages(t *testing.T) {
 	var err error
 
@@ -800,6 +724,257 @@ func testChapterToManyAddOpPages(t *testing.T) {
 		}
 	}
 }
+func testChapterToManyAddOpTerms(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a Chapter
+	var b, c, d, e Term
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, chapterDBTypes, false, strmangle.SetComplement(chapterPrimaryKeyColumns, chapterColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*Term{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, termDBTypes, false, strmangle.SetComplement(termPrimaryKeyColumns, termColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	foreignersSplitByInsertion := [][]*Term{
+		{&b, &c},
+		{&d, &e},
+	}
+
+	for i, x := range foreignersSplitByInsertion {
+		err = a.AddTerms(ctx, tx, i != 0, x...)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		first := x[0]
+		second := x[1]
+
+		if !queries.Equal(a.ChapterID, first.ChapterID) {
+			t.Error("foreign key was wrong value", a.ChapterID, first.ChapterID)
+		}
+		if !queries.Equal(a.ChapterID, second.ChapterID) {
+			t.Error("foreign key was wrong value", a.ChapterID, second.ChapterID)
+		}
+
+		if first.R.Chapter != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+		if second.R.Chapter != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+
+		if a.R.Terms[i*2] != first {
+			t.Error("relationship struct slice not set to correct value")
+		}
+		if a.R.Terms[i*2+1] != second {
+			t.Error("relationship struct slice not set to correct value")
+		}
+
+		count, err := a.Terms().Count(ctx, tx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if want := int64((i + 1) * 2); count != want {
+			t.Error("want", want, "got", count)
+		}
+	}
+}
+
+func testChapterToManySetOpTerms(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a Chapter
+	var b, c, d, e Term
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, chapterDBTypes, false, strmangle.SetComplement(chapterPrimaryKeyColumns, chapterColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*Term{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, termDBTypes, false, strmangle.SetComplement(termPrimaryKeyColumns, termColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err = a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	err = a.SetTerms(ctx, tx, false, &b, &c)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err := a.Terms().Count(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 2 {
+		t.Error("count was wrong:", count)
+	}
+
+	err = a.SetTerms(ctx, tx, true, &d, &e)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err = a.Terms().Count(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 2 {
+		t.Error("count was wrong:", count)
+	}
+
+	if !queries.IsValuerNil(b.ChapterID) {
+		t.Error("want b's foreign key value to be nil")
+	}
+	if !queries.IsValuerNil(c.ChapterID) {
+		t.Error("want c's foreign key value to be nil")
+	}
+	if !queries.Equal(a.ChapterID, d.ChapterID) {
+		t.Error("foreign key was wrong value", a.ChapterID, d.ChapterID)
+	}
+	if !queries.Equal(a.ChapterID, e.ChapterID) {
+		t.Error("foreign key was wrong value", a.ChapterID, e.ChapterID)
+	}
+
+	if b.R.Chapter != nil {
+		t.Error("relationship was not removed properly from the foreign struct")
+	}
+	if c.R.Chapter != nil {
+		t.Error("relationship was not removed properly from the foreign struct")
+	}
+	if d.R.Chapter != &a {
+		t.Error("relationship was not added properly to the foreign struct")
+	}
+	if e.R.Chapter != &a {
+		t.Error("relationship was not added properly to the foreign struct")
+	}
+
+	if a.R.Terms[0] != &d {
+		t.Error("relationship struct slice not set to correct value")
+	}
+	if a.R.Terms[1] != &e {
+		t.Error("relationship struct slice not set to correct value")
+	}
+}
+
+func testChapterToManyRemoveOpTerms(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a Chapter
+	var b, c, d, e Term
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, chapterDBTypes, false, strmangle.SetComplement(chapterPrimaryKeyColumns, chapterColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*Term{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, termDBTypes, false, strmangle.SetComplement(termPrimaryKeyColumns, termColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	err = a.AddTerms(ctx, tx, true, foreigners...)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err := a.Terms().Count(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 4 {
+		t.Error("count was wrong:", count)
+	}
+
+	err = a.RemoveTerms(ctx, tx, foreigners[:2]...)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err = a.Terms().Count(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 2 {
+		t.Error("count was wrong:", count)
+	}
+
+	if !queries.IsValuerNil(b.ChapterID) {
+		t.Error("want b's foreign key value to be nil")
+	}
+	if !queries.IsValuerNil(c.ChapterID) {
+		t.Error("want c's foreign key value to be nil")
+	}
+
+	if b.R.Chapter != nil {
+		t.Error("relationship was not removed properly from the foreign struct")
+	}
+	if c.R.Chapter != nil {
+		t.Error("relationship was not removed properly from the foreign struct")
+	}
+	if d.R.Chapter != &a {
+		t.Error("relationship to a should have been preserved")
+	}
+	if e.R.Chapter != &a {
+		t.Error("relationship to a should have been preserved")
+	}
+
+	if len(a.R.Terms) != 2 {
+		t.Error("should have preserved two relationships")
+	}
+
+	// Removal doesn't do a stable deletion for performance so we have to flip the order
+	if a.R.Terms[1] != &d {
+		t.Error("relationship to d should have been preserved")
+	}
+	if a.R.Terms[0] != &e {
+		t.Error("relationship to e should have been preserved")
+	}
+}
+
 func testChapterToOneDynamicUsingDynamic(t *testing.T) {
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))

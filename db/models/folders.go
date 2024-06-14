@@ -24,12 +24,12 @@ import (
 
 // Folder is an object representing the database table.
 type Folder struct {
-	Name      string    `boil:"name" json:"name" toml:"name" yaml:"name"`
-	UserID    string    `boil:"user_id" json:"user_id" toml:"user_id" yaml:"user_id"`
-	CreatedAt time.Time `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
-	UpdatedAt time.Time `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
-	FolderID  int       `boil:"folder_id" json:"folder_id" toml:"folder_id" yaml:"folder_id"`
-	ParentID  null.Int  `boil:"parent_id" json:"parent_id,omitempty" toml:"parent_id" yaml:"parent_id,omitempty"`
+	Name      string     `boil:"name" json:"name" toml:"name" yaml:"name"`
+	UserID    string     `boil:"user_id" json:"user_id" toml:"user_id" yaml:"user_id"`
+	CreatedAt time.Time  `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
+	UpdatedAt time.Time  `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
+	FolderID  int32      `boil:"folder_id" json:"folder_id" toml:"folder_id" yaml:"folder_id"`
+	ParentID  null.Int32 `boil:"parent_id" json:"parent_id,omitempty" toml:"parent_id" yaml:"parent_id,omitempty"`
 
 	R *folderR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L folderL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -69,20 +69,58 @@ var FolderTableColumns = struct {
 
 // Generated where
 
+type whereHelpernull_Int32 struct{ field string }
+
+func (w whereHelpernull_Int32) EQ(x null.Int32) qm.QueryMod {
+	return qmhelper.WhereNullEQ(w.field, false, x)
+}
+func (w whereHelpernull_Int32) NEQ(x null.Int32) qm.QueryMod {
+	return qmhelper.WhereNullEQ(w.field, true, x)
+}
+func (w whereHelpernull_Int32) LT(x null.Int32) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LT, x)
+}
+func (w whereHelpernull_Int32) LTE(x null.Int32) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LTE, x)
+}
+func (w whereHelpernull_Int32) GT(x null.Int32) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GT, x)
+}
+func (w whereHelpernull_Int32) GTE(x null.Int32) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GTE, x)
+}
+func (w whereHelpernull_Int32) IN(slice []int32) qm.QueryMod {
+	values := make([]interface{}, 0, len(slice))
+	for _, value := range slice {
+		values = append(values, value)
+	}
+	return qm.WhereIn(fmt.Sprintf("%s IN ?", w.field), values...)
+}
+func (w whereHelpernull_Int32) NIN(slice []int32) qm.QueryMod {
+	values := make([]interface{}, 0, len(slice))
+	for _, value := range slice {
+		values = append(values, value)
+	}
+	return qm.WhereNotIn(fmt.Sprintf("%s NOT IN ?", w.field), values...)
+}
+
+func (w whereHelpernull_Int32) IsNull() qm.QueryMod    { return qmhelper.WhereIsNull(w.field) }
+func (w whereHelpernull_Int32) IsNotNull() qm.QueryMod { return qmhelper.WhereIsNotNull(w.field) }
+
 var FolderWhere = struct {
 	Name      whereHelperstring
 	UserID    whereHelperstring
 	CreatedAt whereHelpertime_Time
 	UpdatedAt whereHelpertime_Time
-	FolderID  whereHelperint
-	ParentID  whereHelpernull_Int
+	FolderID  whereHelperint32
+	ParentID  whereHelpernull_Int32
 }{
 	Name:      whereHelperstring{field: "\"folders\".\"name\""},
 	UserID:    whereHelperstring{field: "\"folders\".\"user_id\""},
 	CreatedAt: whereHelpertime_Time{field: "\"folders\".\"created_at\""},
 	UpdatedAt: whereHelpertime_Time{field: "\"folders\".\"updated_at\""},
-	FolderID:  whereHelperint{field: "\"folders\".\"folder_id\""},
-	ParentID:  whereHelpernull_Int{field: "\"folders\".\"parent_id\""},
+	FolderID:  whereHelperint32{field: "\"folders\".\"folder_id\""},
+	ParentID:  whereHelpernull_Int32{field: "\"folders\".\"parent_id\""},
 }
 
 // FolderRels is where relationship names are stored.
@@ -1344,7 +1382,7 @@ func Folders(mods ...qm.QueryMod) folderQuery {
 
 // FindFolder retrieves a single record by ID with an executor.
 // If selectCols is empty Find will return all columns.
-func FindFolder(ctx context.Context, exec boil.ContextExecutor, folderID int, selectCols ...string) (*Folder, error) {
+func FindFolder(ctx context.Context, exec boil.ContextExecutor, folderID int32, selectCols ...string) (*Folder, error) {
 	folderObj := &Folder{}
 
 	sel := "*"
@@ -1867,7 +1905,7 @@ func (o *FolderSlice) ReloadAll(ctx context.Context, exec boil.ContextExecutor) 
 }
 
 // FolderExists checks if the Folder row exists.
-func FolderExists(ctx context.Context, exec boil.ContextExecutor, folderID int) (bool, error) {
+func FolderExists(ctx context.Context, exec boil.ContextExecutor, folderID int32) (bool, error) {
 	var exists bool
 	sql := "select exists(select 1 from \"folders\" where \"folder_id\"=$1 limit 1)"
 

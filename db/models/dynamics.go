@@ -23,7 +23,7 @@ import (
 
 // Dynamic is an object representing the database table.
 type Dynamic struct {
-	DynamicID int       `boil:"dynamic_id" json:"dynamic_id" toml:"dynamic_id" yaml:"dynamic_id"`
+	DynamicID int32     `boil:"dynamic_id" json:"dynamic_id" toml:"dynamic_id" yaml:"dynamic_id"`
 	Title     string    `boil:"title" json:"title" toml:"title" yaml:"title"`
 	Overview  string    `boil:"overview" json:"overview" toml:"overview" yaml:"overview"`
 	Published bool      `boil:"published" json:"published" toml:"published" yaml:"published"`
@@ -83,7 +83,7 @@ func (w whereHelperbool) GT(x bool) qm.QueryMod  { return qmhelper.Where(w.field
 func (w whereHelperbool) GTE(x bool) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.GTE, x) }
 
 var DynamicWhere = struct {
-	DynamicID whereHelperint
+	DynamicID whereHelperint32
 	Title     whereHelperstring
 	Overview  whereHelperstring
 	Published whereHelperbool
@@ -91,7 +91,7 @@ var DynamicWhere = struct {
 	CreatedAt whereHelpertime_Time
 	UpdatedAt whereHelpertime_Time
 }{
-	DynamicID: whereHelperint{field: "\"dynamics\".\"dynamic_id\""},
+	DynamicID: whereHelperint32{field: "\"dynamics\".\"dynamic_id\""},
 	Title:     whereHelperstring{field: "\"dynamics\".\"title\""},
 	Overview:  whereHelperstring{field: "\"dynamics\".\"overview\""},
 	Published: whereHelperbool{field: "\"dynamics\".\"published\""},
@@ -103,28 +103,31 @@ var DynamicWhere = struct {
 // DynamicRels is where relationship names are stored.
 var DynamicRels = struct {
 	User           string
+	ImageOfCover   string
 	Chapters       string
-	DynamicTerms   string
 	DynamicsOnTags string
 	Impressions    string
 	Marks          string
+	Terms          string
 }{
 	User:           "User",
+	ImageOfCover:   "ImageOfCover",
 	Chapters:       "Chapters",
-	DynamicTerms:   "DynamicTerms",
 	DynamicsOnTags: "DynamicsOnTags",
 	Impressions:    "Impressions",
 	Marks:          "Marks",
+	Terms:          "Terms",
 }
 
 // dynamicR is where relationships are stored.
 type dynamicR struct {
 	User           *User              `boil:"User" json:"User" toml:"User" yaml:"User"`
+	ImageOfCover   *ImageOfCover      `boil:"ImageOfCover" json:"ImageOfCover" toml:"ImageOfCover" yaml:"ImageOfCover"`
 	Chapters       ChapterSlice       `boil:"Chapters" json:"Chapters" toml:"Chapters" yaml:"Chapters"`
-	DynamicTerms   DynamicTermSlice   `boil:"DynamicTerms" json:"DynamicTerms" toml:"DynamicTerms" yaml:"DynamicTerms"`
 	DynamicsOnTags DynamicsOnTagSlice `boil:"DynamicsOnTags" json:"DynamicsOnTags" toml:"DynamicsOnTags" yaml:"DynamicsOnTags"`
 	Impressions    ImpressionSlice    `boil:"Impressions" json:"Impressions" toml:"Impressions" yaml:"Impressions"`
 	Marks          MarkSlice          `boil:"Marks" json:"Marks" toml:"Marks" yaml:"Marks"`
+	Terms          TermSlice          `boil:"Terms" json:"Terms" toml:"Terms" yaml:"Terms"`
 }
 
 // NewStruct creates a new relationship struct
@@ -139,18 +142,18 @@ func (r *dynamicR) GetUser() *User {
 	return r.User
 }
 
+func (r *dynamicR) GetImageOfCover() *ImageOfCover {
+	if r == nil {
+		return nil
+	}
+	return r.ImageOfCover
+}
+
 func (r *dynamicR) GetChapters() ChapterSlice {
 	if r == nil {
 		return nil
 	}
 	return r.Chapters
-}
-
-func (r *dynamicR) GetDynamicTerms() DynamicTermSlice {
-	if r == nil {
-		return nil
-	}
-	return r.DynamicTerms
 }
 
 func (r *dynamicR) GetDynamicsOnTags() DynamicsOnTagSlice {
@@ -172,6 +175,13 @@ func (r *dynamicR) GetMarks() MarkSlice {
 		return nil
 	}
 	return r.Marks
+}
+
+func (r *dynamicR) GetTerms() TermSlice {
+	if r == nil {
+		return nil
+	}
+	return r.Terms
 }
 
 // dynamicL is where Load methods for each relationship are stored.
@@ -474,6 +484,17 @@ func (o *Dynamic) User(mods ...qm.QueryMod) userQuery {
 	return Users(queryMods...)
 }
 
+// ImageOfCover pointed to by the foreign key.
+func (o *Dynamic) ImageOfCover(mods ...qm.QueryMod) imageOfCoverQuery {
+	queryMods := []qm.QueryMod{
+		qm.Where("\"dynamic_id\" = ?", o.DynamicID),
+	}
+
+	queryMods = append(queryMods, mods...)
+
+	return ImageOfCovers(queryMods...)
+}
+
 // Chapters retrieves all the chapter's Chapters with an executor.
 func (o *Dynamic) Chapters(mods ...qm.QueryMod) chapterQuery {
 	var queryMods []qm.QueryMod
@@ -486,20 +507,6 @@ func (o *Dynamic) Chapters(mods ...qm.QueryMod) chapterQuery {
 	)
 
 	return Chapters(queryMods...)
-}
-
-// DynamicTerms retrieves all the dynamic_term's DynamicTerms with an executor.
-func (o *Dynamic) DynamicTerms(mods ...qm.QueryMod) dynamicTermQuery {
-	var queryMods []qm.QueryMod
-	if len(mods) != 0 {
-		queryMods = append(queryMods, mods...)
-	}
-
-	queryMods = append(queryMods,
-		qm.Where("\"dynamic_terms\".\"dynamic_id\"=?", o.DynamicID),
-	)
-
-	return DynamicTerms(queryMods...)
 }
 
 // DynamicsOnTags retrieves all the dynamics_on_tag's DynamicsOnTags with an executor.
@@ -542,6 +549,20 @@ func (o *Dynamic) Marks(mods ...qm.QueryMod) markQuery {
 	)
 
 	return Marks(queryMods...)
+}
+
+// Terms retrieves all the term's Terms with an executor.
+func (o *Dynamic) Terms(mods ...qm.QueryMod) termQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"terms\".\"dynamic_id\"=?", o.DynamicID),
+	)
+
+	return Terms(queryMods...)
 }
 
 // LoadUser allows an eager lookup of values, cached into the
@@ -664,6 +685,123 @@ func (dynamicL) LoadUser(ctx context.Context, e boil.ContextExecutor, singular b
 	return nil
 }
 
+// LoadImageOfCover allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-1 relationship.
+func (dynamicL) LoadImageOfCover(ctx context.Context, e boil.ContextExecutor, singular bool, maybeDynamic interface{}, mods queries.Applicator) error {
+	var slice []*Dynamic
+	var object *Dynamic
+
+	if singular {
+		var ok bool
+		object, ok = maybeDynamic.(*Dynamic)
+		if !ok {
+			object = new(Dynamic)
+			ok = queries.SetFromEmbeddedStruct(&object, &maybeDynamic)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeDynamic))
+			}
+		}
+	} else {
+		s, ok := maybeDynamic.(*[]*Dynamic)
+		if ok {
+			slice = *s
+		} else {
+			ok = queries.SetFromEmbeddedStruct(&slice, maybeDynamic)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeDynamic))
+			}
+		}
+	}
+
+	args := make([]interface{}, 0, 1)
+	if singular {
+		if object.R == nil {
+			object.R = &dynamicR{}
+		}
+		args = append(args, object.DynamicID)
+	} else {
+	Outer:
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &dynamicR{}
+			}
+
+			for _, a := range args {
+				if a == obj.DynamicID {
+					continue Outer
+				}
+			}
+
+			args = append(args, obj.DynamicID)
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	query := NewQuery(
+		qm.From(`image_of_cover`),
+		qm.WhereIn(`image_of_cover.dynamic_id in ?`, args...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load ImageOfCover")
+	}
+
+	var resultSlice []*ImageOfCover
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice ImageOfCover")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results of eager load for image_of_cover")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for image_of_cover")
+	}
+
+	if len(imageOfCoverAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+
+	if len(resultSlice) == 0 {
+		return nil
+	}
+
+	if singular {
+		foreign := resultSlice[0]
+		object.R.ImageOfCover = foreign
+		if foreign.R == nil {
+			foreign.R = &imageOfCoverR{}
+		}
+		foreign.R.Dynamic = object
+	}
+
+	for _, local := range slice {
+		for _, foreign := range resultSlice {
+			if local.DynamicID == foreign.DynamicID {
+				local.R.ImageOfCover = foreign
+				if foreign.R == nil {
+					foreign.R = &imageOfCoverR{}
+				}
+				foreign.R.Dynamic = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
 // LoadChapters allows an eager lookup of values, cached into the
 // loaded structs of the objects. This is for a 1-M or N-M relationship.
 func (dynamicL) LoadChapters(ctx context.Context, e boil.ContextExecutor, singular bool, maybeDynamic interface{}, mods queries.Applicator) error {
@@ -768,120 +906,6 @@ func (dynamicL) LoadChapters(ctx context.Context, e boil.ContextExecutor, singul
 				local.R.Chapters = append(local.R.Chapters, foreign)
 				if foreign.R == nil {
 					foreign.R = &chapterR{}
-				}
-				foreign.R.Dynamic = local
-				break
-			}
-		}
-	}
-
-	return nil
-}
-
-// LoadDynamicTerms allows an eager lookup of values, cached into the
-// loaded structs of the objects. This is for a 1-M or N-M relationship.
-func (dynamicL) LoadDynamicTerms(ctx context.Context, e boil.ContextExecutor, singular bool, maybeDynamic interface{}, mods queries.Applicator) error {
-	var slice []*Dynamic
-	var object *Dynamic
-
-	if singular {
-		var ok bool
-		object, ok = maybeDynamic.(*Dynamic)
-		if !ok {
-			object = new(Dynamic)
-			ok = queries.SetFromEmbeddedStruct(&object, &maybeDynamic)
-			if !ok {
-				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeDynamic))
-			}
-		}
-	} else {
-		s, ok := maybeDynamic.(*[]*Dynamic)
-		if ok {
-			slice = *s
-		} else {
-			ok = queries.SetFromEmbeddedStruct(&slice, maybeDynamic)
-			if !ok {
-				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeDynamic))
-			}
-		}
-	}
-
-	args := make([]interface{}, 0, 1)
-	if singular {
-		if object.R == nil {
-			object.R = &dynamicR{}
-		}
-		args = append(args, object.DynamicID)
-	} else {
-	Outer:
-		for _, obj := range slice {
-			if obj.R == nil {
-				obj.R = &dynamicR{}
-			}
-
-			for _, a := range args {
-				if a == obj.DynamicID {
-					continue Outer
-				}
-			}
-
-			args = append(args, obj.DynamicID)
-		}
-	}
-
-	if len(args) == 0 {
-		return nil
-	}
-
-	query := NewQuery(
-		qm.From(`dynamic_terms`),
-		qm.WhereIn(`dynamic_terms.dynamic_id in ?`, args...),
-	)
-	if mods != nil {
-		mods.Apply(query)
-	}
-
-	results, err := query.QueryContext(ctx, e)
-	if err != nil {
-		return errors.Wrap(err, "failed to eager load dynamic_terms")
-	}
-
-	var resultSlice []*DynamicTerm
-	if err = queries.Bind(results, &resultSlice); err != nil {
-		return errors.Wrap(err, "failed to bind eager loaded slice dynamic_terms")
-	}
-
-	if err = results.Close(); err != nil {
-		return errors.Wrap(err, "failed to close results in eager load on dynamic_terms")
-	}
-	if err = results.Err(); err != nil {
-		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for dynamic_terms")
-	}
-
-	if len(dynamicTermAfterSelectHooks) != 0 {
-		for _, obj := range resultSlice {
-			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
-				return err
-			}
-		}
-	}
-	if singular {
-		object.R.DynamicTerms = resultSlice
-		for _, foreign := range resultSlice {
-			if foreign.R == nil {
-				foreign.R = &dynamicTermR{}
-			}
-			foreign.R.Dynamic = object
-		}
-		return nil
-	}
-
-	for _, foreign := range resultSlice {
-		for _, local := range slice {
-			if local.DynamicID == foreign.DynamicID {
-				local.R.DynamicTerms = append(local.R.DynamicTerms, foreign)
-				if foreign.R == nil {
-					foreign.R = &dynamicTermR{}
 				}
 				foreign.R.Dynamic = local
 				break
@@ -1234,6 +1258,120 @@ func (dynamicL) LoadMarks(ctx context.Context, e boil.ContextExecutor, singular 
 	return nil
 }
 
+// LoadTerms allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (dynamicL) LoadTerms(ctx context.Context, e boil.ContextExecutor, singular bool, maybeDynamic interface{}, mods queries.Applicator) error {
+	var slice []*Dynamic
+	var object *Dynamic
+
+	if singular {
+		var ok bool
+		object, ok = maybeDynamic.(*Dynamic)
+		if !ok {
+			object = new(Dynamic)
+			ok = queries.SetFromEmbeddedStruct(&object, &maybeDynamic)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeDynamic))
+			}
+		}
+	} else {
+		s, ok := maybeDynamic.(*[]*Dynamic)
+		if ok {
+			slice = *s
+		} else {
+			ok = queries.SetFromEmbeddedStruct(&slice, maybeDynamic)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeDynamic))
+			}
+		}
+	}
+
+	args := make([]interface{}, 0, 1)
+	if singular {
+		if object.R == nil {
+			object.R = &dynamicR{}
+		}
+		args = append(args, object.DynamicID)
+	} else {
+	Outer:
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &dynamicR{}
+			}
+
+			for _, a := range args {
+				if queries.Equal(a, obj.DynamicID) {
+					continue Outer
+				}
+			}
+
+			args = append(args, obj.DynamicID)
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	query := NewQuery(
+		qm.From(`terms`),
+		qm.WhereIn(`terms.dynamic_id in ?`, args...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load terms")
+	}
+
+	var resultSlice []*Term
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice terms")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on terms")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for terms")
+	}
+
+	if len(termAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.Terms = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &termR{}
+			}
+			foreign.R.Dynamic = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if queries.Equal(local.DynamicID, foreign.DynamicID) {
+				local.R.Terms = append(local.R.Terms, foreign)
+				if foreign.R == nil {
+					foreign.R = &termR{}
+				}
+				foreign.R.Dynamic = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
 // SetUser of the dynamic to the related item.
 // Sets o.R.User to related.
 // Adds o to related.R.Dynamics.
@@ -1281,6 +1419,56 @@ func (o *Dynamic) SetUser(ctx context.Context, exec boil.ContextExecutor, insert
 	return nil
 }
 
+// SetImageOfCover of the dynamic to the related item.
+// Sets o.R.ImageOfCover to related.
+// Adds o to related.R.Dynamic.
+func (o *Dynamic) SetImageOfCover(ctx context.Context, exec boil.ContextExecutor, insert bool, related *ImageOfCover) error {
+	var err error
+
+	if insert {
+		related.DynamicID = o.DynamicID
+
+		if err = related.Insert(ctx, exec, boil.Infer()); err != nil {
+			return errors.Wrap(err, "failed to insert into foreign table")
+		}
+	} else {
+		updateQuery := fmt.Sprintf(
+			"UPDATE \"image_of_cover\" SET %s WHERE %s",
+			strmangle.SetParamNames("\"", "\"", 1, []string{"dynamic_id"}),
+			strmangle.WhereClause("\"", "\"", 2, imageOfCoverPrimaryKeyColumns),
+		)
+		values := []interface{}{o.DynamicID, related.CoverImageID}
+
+		if boil.IsDebug(ctx) {
+			writer := boil.DebugWriterFrom(ctx)
+			fmt.Fprintln(writer, updateQuery)
+			fmt.Fprintln(writer, values)
+		}
+		if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+			return errors.Wrap(err, "failed to update foreign table")
+		}
+
+		related.DynamicID = o.DynamicID
+	}
+
+	if o.R == nil {
+		o.R = &dynamicR{
+			ImageOfCover: related,
+		}
+	} else {
+		o.R.ImageOfCover = related
+	}
+
+	if related.R == nil {
+		related.R = &imageOfCoverR{
+			Dynamic: o,
+		}
+	} else {
+		related.R.Dynamic = o
+	}
+	return nil
+}
+
 // AddChapters adds the given related objects to the existing relationships
 // of the dynamic, optionally inserting them as new records.
 // Appends related to o.R.Chapters.
@@ -1325,59 +1513,6 @@ func (o *Dynamic) AddChapters(ctx context.Context, exec boil.ContextExecutor, in
 	for _, rel := range related {
 		if rel.R == nil {
 			rel.R = &chapterR{
-				Dynamic: o,
-			}
-		} else {
-			rel.R.Dynamic = o
-		}
-	}
-	return nil
-}
-
-// AddDynamicTerms adds the given related objects to the existing relationships
-// of the dynamic, optionally inserting them as new records.
-// Appends related to o.R.DynamicTerms.
-// Sets related.R.Dynamic appropriately.
-func (o *Dynamic) AddDynamicTerms(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*DynamicTerm) error {
-	var err error
-	for _, rel := range related {
-		if insert {
-			rel.DynamicID = o.DynamicID
-			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
-				return errors.Wrap(err, "failed to insert into foreign table")
-			}
-		} else {
-			updateQuery := fmt.Sprintf(
-				"UPDATE \"dynamic_terms\" SET %s WHERE %s",
-				strmangle.SetParamNames("\"", "\"", 1, []string{"dynamic_id"}),
-				strmangle.WhereClause("\"", "\"", 2, dynamicTermPrimaryKeyColumns),
-			)
-			values := []interface{}{o.DynamicID, rel.DynamicTermID}
-
-			if boil.IsDebug(ctx) {
-				writer := boil.DebugWriterFrom(ctx)
-				fmt.Fprintln(writer, updateQuery)
-				fmt.Fprintln(writer, values)
-			}
-			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
-				return errors.Wrap(err, "failed to update foreign table")
-			}
-
-			rel.DynamicID = o.DynamicID
-		}
-	}
-
-	if o.R == nil {
-		o.R = &dynamicR{
-			DynamicTerms: related,
-		}
-	} else {
-		o.R.DynamicTerms = append(o.R.DynamicTerms, related...)
-	}
-
-	for _, rel := range related {
-		if rel.R == nil {
-			rel.R = &dynamicTermR{
 				Dynamic: o,
 			}
 		} else {
@@ -1546,6 +1681,133 @@ func (o *Dynamic) AddMarks(ctx context.Context, exec boil.ContextExecutor, inser
 	return nil
 }
 
+// AddTerms adds the given related objects to the existing relationships
+// of the dynamic, optionally inserting them as new records.
+// Appends related to o.R.Terms.
+// Sets related.R.Dynamic appropriately.
+func (o *Dynamic) AddTerms(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*Term) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			queries.Assign(&rel.DynamicID, o.DynamicID)
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"terms\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"dynamic_id"}),
+				strmangle.WhereClause("\"", "\"", 2, termPrimaryKeyColumns),
+			)
+			values := []interface{}{o.DynamicID, rel.TermID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			queries.Assign(&rel.DynamicID, o.DynamicID)
+		}
+	}
+
+	if o.R == nil {
+		o.R = &dynamicR{
+			Terms: related,
+		}
+	} else {
+		o.R.Terms = append(o.R.Terms, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &termR{
+				Dynamic: o,
+			}
+		} else {
+			rel.R.Dynamic = o
+		}
+	}
+	return nil
+}
+
+// SetTerms removes all previously related items of the
+// dynamic replacing them completely with the passed
+// in related items, optionally inserting them as new records.
+// Sets o.R.Dynamic's Terms accordingly.
+// Replaces o.R.Terms with related.
+// Sets related.R.Dynamic's Terms accordingly.
+func (o *Dynamic) SetTerms(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*Term) error {
+	query := "update \"terms\" set \"dynamic_id\" = null where \"dynamic_id\" = $1"
+	values := []interface{}{o.DynamicID}
+	if boil.IsDebug(ctx) {
+		writer := boil.DebugWriterFrom(ctx)
+		fmt.Fprintln(writer, query)
+		fmt.Fprintln(writer, values)
+	}
+	_, err := exec.ExecContext(ctx, query, values...)
+	if err != nil {
+		return errors.Wrap(err, "failed to remove relationships before set")
+	}
+
+	if o.R != nil {
+		for _, rel := range o.R.Terms {
+			queries.SetScanner(&rel.DynamicID, nil)
+			if rel.R == nil {
+				continue
+			}
+
+			rel.R.Dynamic = nil
+		}
+		o.R.Terms = nil
+	}
+
+	return o.AddTerms(ctx, exec, insert, related...)
+}
+
+// RemoveTerms relationships from objects passed in.
+// Removes related items from R.Terms (uses pointer comparison, removal does not keep order)
+// Sets related.R.Dynamic.
+func (o *Dynamic) RemoveTerms(ctx context.Context, exec boil.ContextExecutor, related ...*Term) error {
+	if len(related) == 0 {
+		return nil
+	}
+
+	var err error
+	for _, rel := range related {
+		queries.SetScanner(&rel.DynamicID, nil)
+		if rel.R != nil {
+			rel.R.Dynamic = nil
+		}
+		if _, err = rel.Update(ctx, exec, boil.Whitelist("dynamic_id")); err != nil {
+			return err
+		}
+	}
+	if o.R == nil {
+		return nil
+	}
+
+	for _, rel := range related {
+		for i, ri := range o.R.Terms {
+			if rel != ri {
+				continue
+			}
+
+			ln := len(o.R.Terms)
+			if ln > 1 && i < ln-1 {
+				o.R.Terms[i] = o.R.Terms[ln-1]
+			}
+			o.R.Terms = o.R.Terms[:ln-1]
+			break
+		}
+	}
+
+	return nil
+}
+
 // Dynamics retrieves all the records using an executor.
 func Dynamics(mods ...qm.QueryMod) dynamicQuery {
 	mods = append(mods, qm.From("\"dynamics\""))
@@ -1559,7 +1821,7 @@ func Dynamics(mods ...qm.QueryMod) dynamicQuery {
 
 // FindDynamic retrieves a single record by ID with an executor.
 // If selectCols is empty Find will return all columns.
-func FindDynamic(ctx context.Context, exec boil.ContextExecutor, dynamicID int, selectCols ...string) (*Dynamic, error) {
+func FindDynamic(ctx context.Context, exec boil.ContextExecutor, dynamicID int32, selectCols ...string) (*Dynamic, error) {
 	dynamicObj := &Dynamic{}
 
 	sel := "*"
@@ -2082,7 +2344,7 @@ func (o *DynamicSlice) ReloadAll(ctx context.Context, exec boil.ContextExecutor)
 }
 
 // DynamicExists checks if the Dynamic row exists.
-func DynamicExists(ctx context.Context, exec boil.ContextExecutor, dynamicID int) (bool, error) {
+func DynamicExists(ctx context.Context, exec boil.ContextExecutor, dynamicID int32) (bool, error) {
 	var exists bool
 	sql := "select exists(select 1 from \"dynamics\" where \"dynamic_id\"=$1 limit 1)"
 
