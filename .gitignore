@@ -1,3 +1,2 @@
-db/models/*
-gen/proto/dynamic/v1/*
-gen/proto/dynamic/v1/dynamicv1connect/*
+/db/
+/gen/
