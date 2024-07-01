@@ -112,8 +112,8 @@ http://localhost:8080/proto.dynamic.v1.DynamicService/GetDynamic
 ```
 curl \
 --header "Content-Type: application/json" \
---data '{}' \
-http://dynamic_novel_server:8080/proto.dynamic.v1.DynamicService/ListDynamics
+--data '{"dynamic_id": "2"}' \
+http://dynamic_novel_server:8080/proto.dynamic.v1.DynamicService/GetDynamic
 ```
 
 ## パスの重複削除

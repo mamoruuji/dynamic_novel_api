@@ -50,14 +50,16 @@ message SectionData {
   int32 section_id = 1;
   string name = 2;
   int32 order = 3;
-  string type = 4;
-  string frame_color = 5;
-  string text = 6;
-  string text_color = 7;
-  int32 text_size = 8;
-  string font = 9;
-  ImageData image = 10;
-  repeated TermData terms = 11;
+  string type_section = 4;
+  string type_position = 5;
+  string type_animation = 6;
+  string frame_color = 7;
+  string text = 8;
+  string text_color = 9;
+  int32 text_size = 10;
+  string font = 11;
+  ImageData image = 12;
+  repeated TermData terms = 13;
 }
 
 message TermData {
@@ -76,8 +78,8 @@ message TagData {
 
 message ImageData {
   int32 image_id = 1;
-  string name = 2;
-  string path = 3;
+  string image_path = 2;
+  string type = 3;
 }
 
 message GetDynamicRequest {
@@ -91,7 +93,7 @@ message GetDynamicResponse {
   string user_id = 4;
   bool published = 5;
   string user_name = 6;
-  string cover_image_name = 7;
+  ImageData image = 7;
   repeated ChapterData chapters = 8;
   repeated TermData terms = 9;
   repeated TagData tags = 10;
