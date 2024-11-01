@@ -8,7 +8,7 @@ output="db/models"
   pass   = "pass"
   sslmode = "disable"
   schema = "public"
-  blacklist = ["migrations", "other"]
+  blacklist = ["migrations", "accounts", "sessions", "verificationTokens", "other"]
 
 [[types]]
   [types.match]

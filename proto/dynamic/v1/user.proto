@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package proto.dynamic.v1;
+
+option go_package = "github.com/mamoruuji/dynamic_novel_api/gen/proto/dynamic/v1;dynamicv1";
+
+message GetUserRequest {
+  string user_id = 1;
+}
+
+message GetUserResponse {
+  string user_id = 1;
+  string name = 2;
+  string email = 3;
+  string image = 4;
+}
+
+service UserService {
+  rpc GetUser(GetUserRequest) returns (GetUserResponse) {}
+}

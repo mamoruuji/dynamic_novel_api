@@ -18,7 +18,8 @@ message ListDynamicData {
 }
 
 message ListDynamicsRequest {
-  repeated string search_keywords = 1;
+  string user_id = 1;
+  repeated string search_keywords = 2;
   int32 sort_category = 3;
   string sort_order = 4;
   repeated string filter_keywords = 5;
@@ -78,8 +79,9 @@ message TagData {
 
 message ImageData {
   int32 image_id = 1;
-  string image_path = 2;
-  string type = 3;
+  string name = 2;
+  string image_path = 3;
+  string type = 4;
 }
 
 message GetDynamicRequest {
@@ -122,6 +124,8 @@ message UpdateDynamicStatusRequest {
   string title = 2;
   string overview = 3;
   bool published = 4;
+  ImageData image = 5;
+  TagData tag = 6;
 }
 
 message UpdateDynamicStatusResponse {}

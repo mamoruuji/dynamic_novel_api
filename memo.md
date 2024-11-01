@@ -106,6 +106,11 @@ curl \
 --header "Content-Type: application/json" \
 --data '{"dynamic_id": "2"}' \
 http://localhost:8080/proto.dynamic.v1.DynamicService/GetDynamic
+
+curl \
+--header "Content-Type: application/json" \
+--data '{"user_id": "cm1f3m6ok0005fwij8t3t1c74"}' \
+http://localhost:8080/proto.dynamic.v1.UserService/GetUser
 ```
 
 - 別ターミナルから実行
@@ -126,8 +131,8 @@ export PATH="$(printf %s "$PATH" | awk -v RS=: -v ORS=: '!arr[$0]++')"
 ## デバック
 ```
 go get -u github.com/davecgh/go-spew/spew
-inport(
- "github.com/davecgh/go-spew/spew"
+import(
+ _ "github.com/davecgh/go-spew/spew"
 )
 spew.Dump(hoge)
 ```
