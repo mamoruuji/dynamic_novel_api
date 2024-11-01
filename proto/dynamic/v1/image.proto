@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+package proto.dynamic.v1;
+
+import "google/protobuf/timestamp.proto";
+import "proto/dynamic/v1/dynamic.proto";
+
+option go_package = "github.com/mamoruuji/dynamic_novel_api/gen/proto/dynamic/v1;dynamicv1";
+
+message ListUserImageData {
+}
+
+message ListUserImagesRequest {
+  string user_id = 1;
+}
+
+message ListUserImagesResponse {
+  repeated FolderData folders = 1;
+  repeated ImageData images = 2;
+}
+
+message FolderData {
+  int32 folder_id = 1;
+  string name = 2;
+  string user_id = 3;
+  int32 parent_id = 4;
+  repeated FolderData children = 5;
+  repeated ImageData images = 6;
+}
+
+service ImageService {
+  rpc ListUserImages(ListUserImagesRequest) returns (ListUserImagesResponse) {}
+}
