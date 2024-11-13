@@ -12,9 +12,18 @@ message GetUserResponse {
   string user_id = 1;
   string name = 2;
   string email = 3;
-  string image = 4;
+  string pen_name = 4;
+  string text = 5;
+  string image_url = 6;
 }
+
+message UpdateUserRequest {
+  string user_id = 1;
+}
+
+message UpdateUserResponse {}
 
 service UserService {
   rpc GetUser(GetUserRequest) returns (GetUserResponse) {}
+  rpc UpdateUser(UpdateUserRequest) returns (UpdateUserResponse) {}
 }

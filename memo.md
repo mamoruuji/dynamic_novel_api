@@ -109,7 +109,7 @@ http://localhost:8080/proto.dynamic.v1.DynamicService/GetDynamic
 
 curl \
 --header "Content-Type: application/json" \
---data '{"user_id": "cm1f3m6ok0005fwij8t3t1c74"}' \
+--data '{"user_id": "cm3e8w0gm0001rc987lcw23dw"}' \
 http://localhost:8080/proto.dynamic.v1.UserService/GetUser
 ```
 
@@ -136,8 +136,8 @@ import(
 )
 spew.Dump(hoge)
 ```
-sqlboiler psql
-buf generate
+rm -rf db && sqlboiler psql
+rm -rf gen && buf generate
 
 sectionデータ取得
 　画像データ取得
