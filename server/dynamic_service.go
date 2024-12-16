@@ -115,7 +115,7 @@ func (s *dynamicServer) GetDynamic(
 	createdAT := timestamppb.New(dynamic.CreatedAt)
 	updatedAT := timestamppb.New(dynamic.UpdatedAt)
 
-	pbTags := SetTagData(req.Msg.DynamicId, ctx, s.db)
+	pbTags, _ := SetTagData(req.Msg.DynamicId, ctx, s.db)
 	// pbImage := SetImageData(dynamic.R.Image)
 	res := connect.NewResponse(&dynamicv1.GetDynamicResponse{
 		DynamicId: dynamic.DynamicID,
@@ -150,23 +150,24 @@ func (s *dynamicServer) ListDynamics(
 
 	modifiers := []QueryMod{
 		Load(DynamicRels.User),
-		// Load(DynamicRels.DynamicsOnTags),
-		// Load(Rels(DynamicRels.DynamicsOnTags, DynamicsOnTagRels.Tag)),
+		Load(DynamicRels.DynamicsOnTags),
+		Load(Rels(DynamicRels.DynamicsOnTags, DynamicsOnTagRels.Tag)),
 		// LeftOuterJoin(TableNames.Users + " on " + TableNames.Dynamics + "." + DynamicColumns.UserID + " = " + TableNames.Users + "." + UserColumns.UserID),
 		// LeftOuterJoin(TableNames.DynamicsOnTags + " on " + TableNames.Dynamics + "." + DynamicColumns.DynamicID + " = " + TableNames.DynamicsOnTags + "." + DynamicsOnTagColumns.DynamicID),
 		// LeftOuterJoin(TableNames.Tags + " on " + TableNames.DynamicsOnTags + "." + DynamicsOnTagColumns.DynamicID + " = " + TableNames.Tags + "." + TagColumns.TagID),
-		DynamicWhere.Published.EQ(true),
 		OrderBy(fmt.Sprintf("%s %s", sortCategory.SQL, req.Msg.SortOrder)),
 	}
 
 	if req.Msg.UserId != "" {
-		condition := DynamicWhere.UserID.EQ(req.Msg.UserId)
-		modifiers = append(modifiers, condition)
+		modifiers = append(modifiers, DynamicWhere.UserID.EQ(req.Msg.UserId))
+	} else {
+		modifiers = append(modifiers, DynamicWhere.Published.EQ(true))
 	}
 
 	if len(req.Msg.SearchKeywords) != 0 {
 		// var orConditions, Dwhere, Uwhere, Twhere []QueryMod
-		var orConditions, Dwhere []QueryMod
+		// var orConditions, Dwhere []QueryMod
+		var orConditions, Dwhere, Uwhere []QueryMod
 		for key, searchKeyword := range req.Msg.SearchKeywords {
 			keyword := "%" + searchKeyword + "%"
 			if key == 0 {
@@ -183,7 +184,7 @@ func (s *dynamicServer) ListDynamics(
 			// Dwhere = append(Dwhere, Or2(TagWhere.Name.ILIKE(keyword)))
 		}
 		orConditions = append(orConditions, Expr(Dwhere...))
-		// orConditions = append(orConditions, Load(DynamicRels.User, Expr(Uwhere...)))
+		orConditions = append(orConditions, Load(DynamicRels.User, Expr(Uwhere...)))
 		// orConditions = append(orConditions, Load(DynamicRels.User))
 		// orConditions = append(orConditions, Load(DynamicRels.DynamicsOnTags)) 不要
 		// orConditions = append(orConditions, Load(Rels(DynamicRels.DynamicsOnTags, DynamicsOnTagRels.Tag), Expr(Twhere...)))
@@ -221,6 +222,7 @@ func (s *dynamicServer) ListDynamics(
 
 	// boil.DebugMode = true
 	dynamics, err := Dynamics(modifiers...).All(ctx, s.db)
+	// spew.Dump(dynamics)
 
 	if err != nil {
 		log.Printf("failed to get dynamics: %v", err)
@@ -229,8 +231,7 @@ func (s *dynamicServer) ListDynamics(
 
 	var pbDynamics []*dynamicv1.ListDynamicData
 	for _, dynamic := range dynamics {
-		pbTags := SetTagData(dynamic.DynamicID, ctx, s.db)
-		// spew.Dump(dynamic.R.User)
+		pbTags, _ := SetTagData(dynamic.DynamicID, ctx, s.db)
 		createdAT := timestamppb.New(dynamic.CreatedAt)
 		updatedAT := timestamppb.New(dynamic.UpdatedAt)
 		pbDynamic := &dynamicv1.ListDynamicData{

@@ -3,6 +3,7 @@ package config
 import (
 	"context"
 	"database/sql"
+	"log"
 	"time"
 
 	// _ "github.com/davecgh/go-spew/spew"
@@ -71,25 +72,24 @@ func SetTermData(terms []*Term) []*dynamicv1.TermData {
 	return pbTerms
 }
 
-func SetTagData(dynamicId int32, ctx context.Context, db boil.ContextExecutor) []*dynamicv1.TagData {
+func SetTagData(dynamicId int32, ctx context.Context, db boil.ContextExecutor) ([]*dynamicv1.TagData, error) {
 	modifiers := []QueryMod{
 		Load(DynamicsOnTagRels.Tag),
 		DynamicsOnTagWhere.DynamicID.EQ(dynamicId),
 	}
-	DynamicsOnTags, _ := DynamicsOnTags(modifiers...).All(ctx, db)
+	DynamicsOnTags, err := DynamicsOnTags(modifiers...).All(ctx, db)
 
-	// if err != nil {
-	// 	log.Printf("failed to get tags: %v", err)
-	// 	return nil, err
-	// }
+	if err != nil {
+		log.Printf("failed to get dynamicOntags: %v", err)
+		return nil, err
+	}
 	var pbTags []*dynamicv1.TagData
 	for _, dynamicsOnTag := range DynamicsOnTags {
-
 		pbTag := &dynamicv1.TagData{
 			TagId: dynamicsOnTag.TagID,
 			Name:  dynamicsOnTag.R.Tag.Name,
 		}
 		pbTags = append(pbTags, pbTag)
 	}
-	return pbTags
+	return pbTags, nil
 }

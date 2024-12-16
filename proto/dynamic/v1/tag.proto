@@ -1,0 +1,43 @@
+syntax = "proto3";
+
+package proto.dynamic.v1;
+
+import "proto/dynamic/v1/dynamic.proto";
+
+option go_package = "github.com/mamoruuji/dynamic_novel_api/gen/proto/dynamic/v1;dynamicv1";
+
+message ListTagsRequest {
+}
+
+message ListTagsResponse {
+  repeated TagData tags = 1;
+}
+
+message AddTagRequest {
+  string name = 1;
+}
+
+message AddTagResponse {
+  int32 tag_id = 1;
+}
+
+message SetDynamicOnTagRequest {
+  int32 dynamic_id = 1;
+  int32 tag_id = 2;
+}
+
+message SetDynamicOnTagResponse {}
+
+message UnsetDynamicOnTagRequest {
+  int32 dynamic_id = 1;
+  int32 tag_id = 2;
+}
+
+message UnsetDynamicOnTagResponse {}
+
+service TagService {
+  rpc ListTags(ListTagsRequest) returns (ListTagsResponse) {}
+  rpc AddTag(AddTagRequest) returns (AddTagResponse) {}
+  rpc SetDynamicOnTag(SetDynamicOnTagRequest) returns (SetDynamicOnTagResponse) {}
+  rpc UnsetDynamicOnTag(UnsetDynamicOnTagRequest) returns (UnsetDynamicOnTagResponse) {}
+}

@@ -76,7 +76,6 @@ message TermData {
 message TagData {
   int32 tag_id = 1;
   string name = 2;
-  string path = 3;
 }
 
 message ImageData {

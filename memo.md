@@ -111,6 +111,11 @@ curl \
 --header "Content-Type: application/json" \
 --data '{"user_id": "cm3e8w0gm0001rc987lcw23dw"}' \
 http://localhost:8080/proto.dynamic.v1.UserService/GetUser
+
+curl \
+--header "Content-Type: application/json" \
+--data '{}' \
+http://localhost:8080/proto.dynamic.v1.TagService/ListTags
 ```
 
 - 別ターミナルから実行
@@ -136,8 +141,18 @@ import(
 )
 spew.Dump(hoge)
 ```
-rm -rf db && sqlboiler psql
-rm -rf gen && buf generate
+`rm -rf db && sqlboiler psql && rm -rf gen && buf generate`
+
+モック作成
+```
+mockgen -source=mock/mock.go \
+-destination=mocks/mock_models.go \
+-package=mocks github.com/volatiletech/sqlboiler/v4/boil ContextExecutor
+```
+
+mockgen
+-destination=mocks/mock_context_executor.go
+ -package=mocks github.com/volatiletech/sqlboiler/v4/boil ContextExecutor
 
 sectionデータ取得
 　画像データ取得
