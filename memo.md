@@ -141,21 +141,23 @@ import(
 )
 spew.Dump(hoge)
 ```
-`rm -rf db && sqlboiler psql && rm -rf gen && buf generate`
 
-モック作成
 ```
-mockgen -source=mock/mock.go \
--destination=mocks/mock_models.go \
--package=mocks github.com/volatiletech/sqlboiler/v4/boil ContextExecutor
+rm -rf db && sqlboiler psql && rm -rf gen && buf generate
 ```
 
-mockgen
--destination=mocks/mock_context_executor.go
- -package=mocks github.com/volatiletech/sqlboiler/v4/boil ContextExecutor
+## テスト用モック作成
+```
+mockgen \
+ -source gen/proto/dynamic/v1/dynamicv1connect/tag.connect.go \
+ -destination=./mocks/tag_mock.go \
+ -package=mocks
+```
 
-sectionデータ取得
-　画像データ取得
-　　セクションと紐づく画像パス情報取得
-　　　ユーザ/フォルダ階層/画像名
-　　　フォルダ階層情報からS3コマンド実行して画像データ取得
+
+go install github.com/golang/mock/mockgen@v1.7.0-rc.1
+go get github.com/stretchr/testify/mock@v1.9.0
+go get github.com/DATA-DOG/go-sqlmock
+
+go clean -i
+
