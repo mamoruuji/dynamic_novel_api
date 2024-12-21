@@ -74,14 +74,33 @@ func (s *tagServer) SetDynamicOnTag(
 		}
 	}()
 
+	if _, err = DynamicsOnTags(DynamicsOnTagWhere.DynamicID.EQ(req.Msg.DynamicId)).DeleteAll(ctx, tx); err != nil {
+		log.Printf("failed to reset dynamic-tag association: %v", err)
+		return nil, err
+	}
+
+	insertColumns := boil.Whitelist(DynamicsOnTagColumns.DynamicID, DynamicsOnTagColumns.TagID)
+
 	for _, name := range req.Msg.TagNames {
 		tag := &Tag{Name: name}
 		if err = s.upsertTag(ctx, tx, tag); err != nil {
 			log.Printf("failed to upsert tag: %v", err)
 			return nil, err
 		}
-		if err = s.upsertDynamicsOnTag(ctx, tx, req.Msg.DynamicId, tag.TagID); err != nil {
-			log.Printf("failed to upsert dynamic-tag association: %v", err)
+
+		if upsertedTag, err := Tags(TagWhere.Name.EQ(name)).One(ctx, tx); err != nil {
+			log.Fatalf("failed to fetch inserted tag: %v", err)
+			return nil, err
+		} else {
+			tag.TagID = upsertedTag.TagID
+		}
+
+		dynamicsOnTag := &DynamicsOnTag{
+			DynamicID: req.Msg.DynamicId,
+			TagID:     tag.TagID,
+		}
+		if err = dynamicsOnTag.Insert(ctx, tx, insertColumns); err != nil {
+			log.Printf("failed to set dynamic-tag association: %v", err)
 			return nil, err
 		}
 	}
@@ -92,24 +111,8 @@ func (s *tagServer) SetDynamicOnTag(
 
 func (s *tagServer) upsertTag(ctx context.Context, tx boil.ContextExecutor, tag *Tag) error {
 	conflictColumns := []string{TagColumns.Name}
-	insertColumns := boil.Infer()
-	updateColumns := boil.Whitelist()
+	insertColumns := boil.Whitelist(TagColumns.Name)
+	updateColumns := boil.Whitelist(TagColumns.Name)
 
 	return tag.Upsert(ctx, tx, false, conflictColumns, insertColumns, updateColumns)
-}
-
-func (s *tagServer) upsertDynamicsOnTag(ctx context.Context, tx boil.ContextExecutor, dynamicID, tagID int32) error {
-	conflictColumns := []string{
-		DynamicsOnTagColumns.DynamicID,
-		DynamicsOnTagColumns.TagID,
-	}
-	insertColumns := boil.Infer()
-	updateColumns := boil.Whitelist()
-
-	dynamicsOnTag := &DynamicsOnTag{
-		DynamicID: dynamicID,
-		TagID:     tagID,
-	}
-
-	return dynamicsOnTag.Upsert(ctx, tx, false, conflictColumns, insertColumns, updateColumns)
 }
