@@ -148,9 +148,9 @@ rm -rf db && sqlboiler psql && rm -rf gen && buf generate
 
 ## テスト用モック作成
 ```
-mockgen \
- -source gen/proto/dynamic/v1/dynamicv1connect/tag.connect.go \
- -destination=./mocks/tag_mock.go \
+mockgen
+ -source gen/proto/dynamic/v1/dynamicv1connect/dynamic.connect.go
+ -destination=./mocks/dynamic_mock.go
  -package=mocks
 ```
 

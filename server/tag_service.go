@@ -20,7 +20,7 @@ type tagServer struct {
 	db boil.ContextExecutor
 }
 
-func NewTagServer(db boil.ContextExecutor) *tagServer {
+func NewTagServer() *tagServer {
 	return &tagServer{
 		db: GetDB(),
 	}

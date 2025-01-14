@@ -39,7 +39,7 @@ func SetImageData(image *Image) *dynamicv1.ImageData {
 			ImageId:   image.ImageID,
 			Name:      image.Name,
 			ImagePath: imagePath,
-			Type:      image.R.TypeOfImage.Name,
+			Type:      image.R.GetTypeOfImage().Name,
 		}
 	}
 	return pbImage
@@ -57,13 +57,11 @@ func SetImagesData(images []*Image) []*dynamicv1.ImageData {
 func SetTermData(terms []*Term) []*dynamicv1.TermData {
 	var pbTerms []*dynamicv1.TermData
 	for _, term := range terms {
-		// pbTermImage := SetImageData(term.R.Image)
 		pbTerm := &dynamicv1.TermData{
-			TermId: term.TermID,
-			Name:   term.Name,
-			Text:   term.Text,
-			Order:  term.Order,
-			// Image:  pbTermImage,
+			TermId:   term.TermID,
+			Name:     term.Name,
+			Text:     term.Text,
+			Order:    term.Order,
 			ImageUrl: term.ImageURL,
 		}
 		pbTerms = append(pbTerms, pbTerm)

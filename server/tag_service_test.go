@@ -1,17 +1,21 @@
-package server_test
+package server
 
 import (
 	"context"
 	"database/sql"
+	"reflect"
 	"testing"
 
 	"github.com/bufbuild/connect-go"
+	"github.com/golang/mock/gomock"
+	. "github.com/mamoruuji/dynamic_novel_api/config"
+	. "github.com/mamoruuji/dynamic_novel_api/db/models"
 	dynamicv1 "github.com/mamoruuji/dynamic_novel_api/gen/proto/dynamic/v1"
+	"github.com/mamoruuji/dynamic_novel_api/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-
-	"github.com/golang/mock/gomock"
-	"github.com/mamoruuji/dynamic_novel_api/mocks"
+	"github.com/volatiletech/sqlboiler/v4/boil"
+	_ "github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
 type MockDB struct {
@@ -113,4 +117,194 @@ func TestSetDynamicOnTag(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.NotNil(t, resp)
+}
+
+// func TestNewTagServer(t *testing.T) {
+// 	tests := []struct {
+// 		name string
+// 		want *tagServer
+// 	}{
+// 		// TODO: Add test cases.
+// 	}
+// 	for _, tt := range tests {
+// 		t.Run(tt.name, func(t *testing.T) {
+// 			if got := NewTagServer(); !reflect.DeepEqual(got, tt.want) {
+// 				t.Errorf("NewTagServer() = %v, want %v", got, tt.want)
+// 			}
+// 		})
+// 	}
+// }
+
+// func Test_tagServer_ListTags(t *testing.T) {
+// 	type args struct {
+// 		ctx context.Context
+// 		req *connect.Request[dynamicv1.ListTagsRequest]
+// 	}
+// 	tests := []struct {
+// 		name    string
+// 		req     *connect.Request[dynamicv1.GetDynamicRequest]
+// 		mockDB  func() *MockDB
+// 		want    *connect.Response[dynamicv1.ListTagsResponse]
+// 		wantErr bool
+// 	}{
+// 		// TODO: Add test cases.
+// 	}
+// 	for _, tt := range tests {
+// 		t.Run(tt.name, func(t *testing.T) {
+// 			got, err := tt.s.ListTags(tt.args.ctx, tt.args.req)
+// 			if (err != nil) != tt.wantErr {
+// 				t.Errorf("tagServer.ListTags() error = %v, wantErr %v", err, tt.wantErr)
+// 				return
+// 			}
+// 			if !reflect.DeepEqual(got, tt.want) {
+// 				t.Errorf("tagServer.ListTags() = %v, want %v", got, tt.want)
+// 			}
+// 		})
+// 	}
+// }
+
+// func Test_tagServer_SetDynamicOnTag(t *testing.T) {
+// 	type args struct {
+// 		ctx context.Context
+// 		req *connect.Request[dynamicv1.SetDynamicOnTagRequest]
+// 	}
+// 	tests := []struct {
+// 		name    string
+// 		req     *connect.Request[dynamicv1.GetDynamicRequest]
+// 		mockDB  func() *MockDB
+// 		want    *connect.Response[dynamicv1.SetDynamicOnTagResponse]
+// 		wantErr bool
+// 	}{
+// 		// TODO: Add test cases.
+// 	}
+// 	for _, tt := range tests {
+// 		t.Run(tt.name, func(t *testing.T) {
+// 			got, err := tt.s.SetDynamicOnTag(tt.args.ctx, tt.args.req)
+// 			if (err != nil) != tt.wantErr {
+// 				t.Errorf("tagServer.SetDynamicOnTag() error = %v, wantErr %v", err, tt.wantErr)
+// 				return
+// 			}
+// 			if !reflect.DeepEqual(got, tt.want) {
+// 				t.Errorf("tagServer.SetDynamicOnTag() = %v, want %v", got, tt.want)
+// 			}
+// 		})
+// 	}
+// }
+
+// func Test_tagServer_upsertTag(t *testing.T) {
+// 	type args struct {
+// 		ctx context.Context
+// 		tx  boil.ContextExecutor
+// 		tag *Tag
+// 	}
+// 	tests := []struct {
+// 		name    string
+// 		s       *tagServer
+// 		args    args
+// 		wantErr bool
+// 	}{
+// 		// TODO: Add test cases.
+// 	}
+// 	for _, tt := range tests {
+// 		t.Run(tt.name, func(t *testing.T) {
+// 			if err := tt.s.upsertTag(tt.args.ctx, tt.args.tx, tt.args.tag); (err != nil) != tt.wantErr {
+// 				t.Errorf("tagServer.upsertTag() error = %v, wantErr %v", err, tt.wantErr)
+// 			}
+// 		})
+// 	}
+// }
+
+func TestNewTagServer(t *testing.T) {
+	tests := []struct {
+		name string
+		want *tagServer
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := NewTagServer(); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("NewTagServer() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_tagServer_ListTags(t *testing.T) {
+	type args struct {
+		ctx context.Context
+		req *connect.Request[dynamicv1.ListTagsRequest]
+	}
+	tests := []struct {
+		name    string
+		s       *tagServer
+		args    args
+		want    *connect.Response[dynamicv1.ListTagsResponse]
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := tt.s.ListTags(tt.args.ctx, tt.args.req)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("tagServer.ListTags() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("tagServer.ListTags() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_tagServer_SetDynamicOnTag(t *testing.T) {
+	type args struct {
+		ctx context.Context
+		req *connect.Request[dynamicv1.SetDynamicOnTagRequest]
+	}
+	tests := []struct {
+		name    string
+		s       *tagServer
+		args    args
+		want    *connect.Response[dynamicv1.SetDynamicOnTagResponse]
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := tt.s.SetDynamicOnTag(tt.args.ctx, tt.args.req)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("tagServer.SetDynamicOnTag() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("tagServer.SetDynamicOnTag() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_tagServer_upsertTag(t *testing.T) {
+	type args struct {
+		ctx context.Context
+		tx  boil.ContextExecutor
+		tag *Tag
+	}
+	tests := []struct {
+		name    string
+		s       *tagServer
+		args    args
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := tt.s.upsertTag(tt.args.ctx, tt.args.tx, tt.args.tag); (err != nil) != tt.wantErr {
+				t.Errorf("tagServer.upsertTag() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
 }
