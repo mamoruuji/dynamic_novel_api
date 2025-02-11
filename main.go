@@ -8,7 +8,6 @@ import (
 	_ "github.com/lib/pq"
 
 	"github.com/volatiletech/null/v8"
-	"github.com/volatiletech/sqlboiler/boil"
 
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
@@ -25,8 +24,6 @@ func NullStringToEmptyString(str null.String) string {
 	}
 	return str.String
 }
-
-var db boil.ContextExecutor
 
 func main() {
 	db, err := sql.Open("postgres", "host=db port=5432 user=postgres password=pass dbname=dynamic_novel sslmode=disable")

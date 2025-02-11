@@ -28,7 +28,7 @@ option go_package = "github.com/mamoruuji/dynamic_novel_api/gen/proto/todo/v1;to
 
 message TodoData {
   int32 id = 1;
-  string title = 2;
+  string name = 2;
   string context = 3;
 }
 
@@ -39,7 +39,7 @@ message ListTodosResponse {
 }
 
 message AddTodoRequest {
-  string title = 1;
+  string name = 1;
   string context = 2;
 }
 
@@ -55,7 +55,7 @@ message DeleteTodoResponse {}
 
 message UpdateTodoStatusRequest {
   int32 id = 1;
-  string title = 2;
+  string name = 2;
   string context = 3;
 }
 
@@ -99,7 +99,7 @@ go 1.21
 
 `go mod tidy`
 ## 動作確認
-`go run ./cmd/server/main.go`
+`go run main.go`
 
 ```
 curl \
@@ -149,15 +149,10 @@ rm -rf db && sqlboiler psql && rm -rf gen && buf generate
 ## テスト用モック作成
 ```
 mockgen
- -source gen/proto/dynamic/v1/dynamicv1connect/dynamic.connect.go
- -destination=./mocks/dynamic_mock.go
+ -source gen/proto/dynamic/v1/dynamicv1connect/chapter.connect.go
+ -destination=./mocks/chapter_mock.go
  -package=mocks
 ```
-
-
-go install github.com/golang/mock/mockgen@v1.7.0-rc.1
-go get github.com/stretchr/testify/mock@v1.9.0
-go get github.com/DATA-DOG/go-sqlmock
 
 go clean -i
 

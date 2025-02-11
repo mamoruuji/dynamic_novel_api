@@ -8,7 +8,7 @@ option go_package = "github.com/mamoruuji/dynamic_novel_api/gen/proto/dynamic/v1
 
 message ListDynamicData {
   int32 dynamic_id = 1;
-  string title = 2;
+  string name = 2;
   string overview = 3;
   string pen_name = 4;
   string image_url = 5;
@@ -33,7 +33,7 @@ message ListDynamicsResponse {
 
 message ChapterData {
   int32 chapter_id = 1;
-  string title = 2;
+  string name = 2;
   int32 order = 3;
   repeated PageData pages = 4;
   repeated TermData terms = 5;
@@ -41,7 +41,7 @@ message ChapterData {
 
 message PageData {
   int32 page_id = 1;
-  string title = 2;
+  string name = 2;
   int32 order = 3;
   repeated SectionData sections = 4;
   repeated TermData terms = 5;
@@ -59,7 +59,6 @@ message SectionData {
   string text_color = 9;
   int32 text_size = 10;
   string font = 11;
-  // ImageData image = 12;
   string image_url = 12;
   repeated TermData terms = 13;
 }
@@ -69,7 +68,6 @@ message TermData {
   string name = 2;
   string text = 3;
   int32 order = 4;
-  // ImageData image = 5;
   string image_url = 5;
 }
 
@@ -91,7 +89,7 @@ message GetDynamicRequest {
 
 message GetDynamicResponse {
   int32 dynamic_id = 1;
-  string title = 2;
+  string name = 2;
   string overview = 3;
   string user_id = 4;
   bool published = 5;
@@ -105,37 +103,45 @@ message GetDynamicResponse {
 }
 
 
-message AddDynamicRequest {
-  string title = 1;
-  string user_id = 2;
+message UpdateContentsOrderRequest {
+  repeated ChapterData chapters = 1;
 }
 
-message AddDynamicResponse {
-  int32 dynamic_id = 1;
+message UpdateContentsOrderResponse {
 }
 
-message DeleteDynamicRequest {
-  int32 dynamic_id = 1;
-}
+// message AddDynamicRequest {
+//   string name = 1;
+//   string user_id = 2;
+// }
 
-message DeleteDynamicResponse {}
+// message AddDynamicResponse {
+//   int32 dynamic_id = 1;
+// }
 
-message UpdateDynamicStatusRequest {
-  int32 dynamic_id = 1;
-  string title = 2;
-  string overview = 3;
-  bool published = 4;
-  // ImageData coverImage = 5;
-  string image_url = 5;
-  repeated TagData tag = 6;
-}
+// message DeleteDynamicRequest {
+//   int32 dynamic_id = 1;
+// }
 
-message UpdateDynamicStatusResponse {}
+// message DeleteDynamicResponse {}
+
+// message UpdateDynamicStatusRequest {
+//   int32 dynamic_id = 1;
+//   string name = 2;
+//   string overview = 3;
+//   bool published = 4;
+//   // ImageData coverImage = 5;
+//   string image_url = 5;
+//   repeated TagData tag = 6;
+// }
+
+// message UpdateDynamicStatusResponse {}
 
 service DynamicService {
   rpc GetDynamic(GetDynamicRequest) returns (GetDynamicResponse) {}
   rpc ListDynamics(ListDynamicsRequest) returns (ListDynamicsResponse) {}
-  rpc AddDynamic(AddDynamicRequest) returns (AddDynamicResponse) {}
-  rpc DeleteDynamic(DeleteDynamicRequest) returns (DeleteDynamicResponse) {}
-  rpc UpdateDynamicStatus(UpdateDynamicStatusRequest) returns (UpdateDynamicStatusResponse) {}
+  rpc UpdateContentsOrder(UpdateContentsOrderRequest) returns (UpdateContentsOrderResponse) {}
+  // rpc AddDynamic(AddDynamicRequest) returns (AddDynamicResponse) {}
+  // rpc DeleteDynamic(DeleteDynamicRequest) returns (DeleteDynamicResponse) {}
+  // rpc UpdateDynamicStatus(UpdateDynamicStatusRequest) returns (UpdateDynamicStatusResponse) {}
 }

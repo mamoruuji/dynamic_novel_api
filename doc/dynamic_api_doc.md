@@ -13,9 +13,9 @@
     - [ListDynamicsResponse](#proto-dynamic-v1-ListDynamicsResponse)
     - [UpdateDynamicStatusRequest](#proto-dynamic-v1-UpdateDynamicStatusRequest)
     - [UpdateDynamicStatusResponse](#proto-dynamic-v1-UpdateDynamicStatusResponse)
-  
+
     - [DynamicService](#proto-dynamic-v1-DynamicService)
-  
+
 - [proto/dynamic/v1/page.proto](#proto_dynamic_v1_page-proto)
     - [AddPageRequest](#proto-dynamic-v1-AddPageRequest)
     - [AddPageResponse](#proto-dynamic-v1-AddPageResponse)
@@ -26,9 +26,9 @@
     - [PageData](#proto-dynamic-v1-PageData)
     - [UpdatePageStatusRequest](#proto-dynamic-v1-UpdatePageStatusRequest)
     - [UpdatePageStatusResponse](#proto-dynamic-v1-UpdatePageStatusResponse)
-  
+
     - [PageService](#proto-dynamic-v1-PageService)
-  
+
 - [Scalar Value Types](#scalar-value-types)
 
 
@@ -48,7 +48,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| title | [string](#string) |  |  |
+| name | [string](#string) |  |  |
 | user_id | [string](#string) |  |  |
 
 
@@ -105,7 +105,7 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | dynamic_id | [int32](#int32) |  |  |
-| title | [string](#string) |  |  |
+| name | [string](#string) |  |  |
 | overview | [string](#string) |  |  |
 | user_id | [string](#string) |  |  |
 | published | [bool](#bool) |  |  |
@@ -149,7 +149,7 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | dynamic_id | [int32](#int32) |  |  |
-| title | [string](#string) |  |  |
+| name | [string](#string) |  |  |
 | overview | [string](#string) |  |  |
 | published | [bool](#bool) |  |  |
 
@@ -167,11 +167,11 @@
 
 
 
- 
 
- 
 
- 
+
+
+
 
 
 <a name="proto-dynamic-v1-DynamicService"></a>
@@ -186,7 +186,7 @@
 | DeleteDynamic | [DeleteDynamicRequest](#proto-dynamic-v1-DeleteDynamicRequest) | [DeleteDynamicResponse](#proto-dynamic-v1-DeleteDynamicResponse) |  |
 | UpdateDynamicStatus | [UpdateDynamicStatusRequest](#proto-dynamic-v1-UpdateDynamicStatusRequest) | [UpdateDynamicStatusResponse](#proto-dynamic-v1-UpdateDynamicStatusResponse) |  |
 
- 
+
 
 
 
@@ -205,7 +205,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| title | [string](#string) |  |  |
+| name | [string](#string) |  |  |
 | chapter_id | [int32](#int32) |  |  |
 | order | [int32](#int32) |  |  |
 
@@ -288,7 +288,7 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | page_id | [int32](#int32) |  |  |
-| title | [string](#string) |  |  |
+| name | [string](#string) |  |  |
 | order | [int32](#int32) |  |  |
 | chapter_id | [int32](#int32) |  |  |
 
@@ -306,7 +306,7 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | page_id | [int32](#int32) |  |  |
-| title | [string](#string) |  |  |
+| name | [string](#string) |  |  |
 | order | [int32](#int32) |  |  |
 
 
@@ -323,11 +323,11 @@
 
 
 
- 
 
- 
 
- 
+
+
+
 
 
 <a name="proto-dynamic-v1-PageService"></a>
@@ -342,7 +342,7 @@
 | DeletePage | [DeletePageRequest](#proto-dynamic-v1-DeletePageRequest) | [DeletePageResponse](#proto-dynamic-v1-DeletePageResponse) |  |
 | UpdatePageStatus | [UpdatePageStatusRequest](#proto-dynamic-v1-UpdatePageStatusRequest) | [UpdatePageStatusResponse](#proto-dynamic-v1-UpdatePageStatusResponse) |  |
 
- 
+
 
 
 

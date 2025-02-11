@@ -8,7 +8,6 @@ import (
 
 	"github.com/bufbuild/connect-go"
 	"github.com/golang/mock/gomock"
-	. "github.com/mamoruuji/dynamic_novel_api/config"
 	. "github.com/mamoruuji/dynamic_novel_api/db/models"
 	dynamicv1 "github.com/mamoruuji/dynamic_novel_api/gen/proto/dynamic/v1"
 	"github.com/mamoruuji/dynamic_novel_api/mocks"

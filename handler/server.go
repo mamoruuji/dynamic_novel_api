@@ -14,6 +14,8 @@ func Server() http.Handler {
 	mux.Handle(path, handler)
 	path, handler = dynamicv1connect.NewImageServiceHandler(NewImageServer())
 	mux.Handle(path, handler)
+	path, handler = dynamicv1connect.NewChapterServiceHandler(NewChapterServer())
+	mux.Handle(path, handler)
 	path, handler = dynamicv1connect.NewPageServiceHandler(NewPageServer())
 	mux.Handle(path, handler)
 	path, handler = dynamicv1connect.NewSortServiceHandler(NewSortServer())

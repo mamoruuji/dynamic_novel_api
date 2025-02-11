@@ -1,0 +1,43 @@
+syntax = "proto3";
+
+package proto.dynamic.v1;
+
+import "proto/dynamic/v1/dynamic.proto";
+
+option go_package = "github.com/mamoruuji/dynamic_novel_api/gen/proto/dynamic/v1;dynamicv1";
+
+message AddChapterRequest {
+  int32 dynamic_id = 1;
+}
+
+message AddChapterResponse {
+  int32 chapter_id = 1;
+  string name = 2;
+  int32 order = 3;
+  string created_time = 4;
+}
+
+message DeleteChapterRequest {
+  int32 chapter_id = 1;
+}
+
+message DeleteChapterResponse {
+  string status = 1;
+  string message = 2;
+}
+
+message UpdateChapterNameRequest {
+  int32 chapter_id = 1;
+  string name = 2;
+}
+
+message UpdateChapterNameResponse {
+  int32 chapter_id = 1;
+  string updated_time = 2;
+}
+
+service ChapterService {
+  rpc AddChapter(AddChapterRequest) returns (AddChapterResponse) {}
+  rpc DeleteChapter(DeleteChapterRequest) returns (DeleteChapterResponse) {}
+  rpc UpdateChapterName(UpdateChapterNameRequest) returns (UpdateChapterNameResponse) {}
+}

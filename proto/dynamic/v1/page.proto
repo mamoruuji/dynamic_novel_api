@@ -2,48 +2,42 @@ syntax = "proto3";
 
 package proto.dynamic.v1;
 
+import "proto/dynamic/v1/dynamic.proto";
+
 option go_package = "github.com/mamoruuji/dynamic_novel_api/gen/proto/dynamic/v1;dynamicv1";
 
-message ListPageData {
-  int32 page_id = 1;
-  string title = 2;
-  int32 order = 3;
-  int32 chapter_id = 4;
-}
-
-message ListPagesRequest {}
-
-message ListPagesResponse {
-  repeated ListPageData pages = 1;
-}
-
 message AddPageRequest {
-  string title = 1;
-  int32 chapter_id = 2;
-  int32 order = 3;
+  int32 chapter_id = 1;
 }
 
 message AddPageResponse {
   int32 page_id = 1;
+  string name = 2;
+  int32 order = 3;
+  string created_time = 4;
 }
 
 message DeletePageRequest {
   int32 page_id = 1;
 }
 
-message DeletePageResponse {}
-
-message UpdatePageStatusRequest {
-  int32 page_id = 1;
-  string title = 2;
-  int32 order = 3;
+message DeletePageResponse {
+  string status = 1;
+  string message = 2;
 }
 
-message UpdatePageStatusResponse {}
+message UpdatePageNameRequest {
+  int32 page_id = 1;
+  string name = 2;
+}
+
+message UpdatePageNameResponse {
+  int32 page_id = 1;
+  string updated_time = 2;
+}
 
 service PageService {
-  rpc ListPages(ListPagesRequest) returns (ListPagesResponse) {}
   rpc AddPage(AddPageRequest) returns (AddPageResponse) {}
   rpc DeletePage(DeletePageRequest) returns (DeletePageResponse) {}
-  rpc UpdatePageStatus(UpdatePageStatusRequest) returns (UpdatePageStatusResponse) {}
+  rpc UpdatePageName(UpdatePageNameRequest) returns (UpdatePageNameResponse) {}
 }
