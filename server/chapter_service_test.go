@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"reflect"
 	"regexp"
@@ -10,6 +11,7 @@ import (
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/bufbuild/connect-go"
 	. "github.com/mamoruuji/dynamic_novel_api/config"
+	_ "github.com/mamoruuji/dynamic_novel_api/db/models"
 	dynamicv1 "github.com/mamoruuji/dynamic_novel_api/gen/proto/dynamic/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/volatiletech/sqlboiler/v4/boil"
@@ -727,4 +729,32 @@ func Test_chapterServer_UpdateChapterName(t *testing.T) {
 		})
 	}
 
+}
+
+func Test_handleChapterDeleteError(t *testing.T) {
+	type args struct {
+		tx  *sql.Tx
+		msg string
+		err error
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    *connect.Response[dynamicv1.DeleteChapterResponse]
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := handleChapterDeleteError(tt.args.tx, tt.args.msg, tt.args.err)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("handleChapterDeleteError() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("handleChapterDeleteError() = %v, want %v", got, tt.want)
+			}
+		})
+	}
 }

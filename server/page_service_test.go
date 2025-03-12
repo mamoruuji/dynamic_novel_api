@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"reflect"
 	"regexp"
@@ -544,6 +545,34 @@ func Test_pageServer_UpdatePageName(t *testing.T) {
 
 			if !tt.wantErr {
 				assert.Equal(t, tt.expectedName, tt.req.Msg.Name)
+			}
+		})
+	}
+}
+
+func Test_handlePageDeleteError(t *testing.T) {
+	type args struct {
+		tx  *sql.Tx
+		msg string
+		err error
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    *connect.Response[dynamicv1.DeletePageResponse]
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := handlePageDeleteError(tt.args.tx, tt.args.msg, tt.args.err)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("handlePageDeleteError() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("handlePageDeleteError() = %v, want %v", got, tt.want)
 			}
 		})
 	}

@@ -41,17 +41,18 @@ func (s *dynamicServer) GetDynamic(
 		Load(Rels(DynamicRels.Chapters, ChapterRels.Terms), OrderBy(TermTableColumns.Order)),
 		Load(Rels(DynamicRels.Chapters, ChapterRels.Pages, PageRels.Sections), OrderBy(SectionTableColumns.Order)),
 		Load(Rels(DynamicRels.Chapters, ChapterRels.Pages, PageRels.Terms), OrderBy(TermTableColumns.Order)),
-		Load(Rels(DynamicRels.Chapters, ChapterRels.Pages, PageRels.Sections, SectionRels.TypeOfSection)),
-		Load(Rels(DynamicRels.Chapters, ChapterRels.Pages, PageRels.Sections, SectionRels.TypeOfAnimation)),
-		Load(Rels(DynamicRels.Chapters, ChapterRels.Pages, PageRels.Sections, SectionRels.TypeOfPosition)),
+		Load(Rels(DynamicRels.Chapters, ChapterRels.Pages, PageRels.Sections, SectionRels.TypeSection)),
+		Load(Rels(DynamicRels.Chapters, ChapterRels.Pages, PageRels.Sections, SectionRels.TypeAnimation)),
+		Load(Rels(DynamicRels.Chapters, ChapterRels.Pages, PageRels.Sections, SectionRels.TypePosition)),
 		// Load(Rels(DynamicRels.Chapters, ChapterRels.Pages, PageRels.Sections, SectionRels.Image)),
 		// Load(Rels(DynamicRels.Chapters, ChapterRels.Pages, PageRels.Sections, SectionRels.Image, ImageRels.TypeOfImage)),
 		// Load(Rels(DynamicRels.Chapters, ChapterRels.Pages, PageRels.Sections, SectionRels.Image, ImageRels.User)),
-		Load(Rels(DynamicRels.Chapters, ChapterRels.Pages, PageRels.Sections, SectionRels.TypeOfFont)),
+		Load(Rels(DynamicRels.Chapters, ChapterRels.Pages, PageRels.Sections, SectionRels.TypeFont)),
 		Load(Rels(DynamicRels.Chapters, ChapterRels.Pages, PageRels.Sections, SectionRels.FrameColor)),
 		Load(Rels(DynamicRels.Chapters, ChapterRels.Pages, PageRels.Sections, SectionRels.TextColor)),
+		Load(Rels(DynamicRels.Chapters, ChapterRels.Pages, PageRels.Sections, SectionRels.TextSize)),
 		Load(Rels(DynamicRels.Chapters, ChapterRels.Pages, PageRels.Sections, SectionRels.Terms), OrderBy(TermTableColumns.Order)),
-		DynamicWhere.DynamicID.EQ(req.Msg.DynamicId),
+		DynamicWhere.ID.EQ(req.Msg.DynamicId),
 	}
 
 	dynamic, err := Dynamics(modifiers...).One(ctx, s.db)
@@ -71,26 +72,33 @@ func (s *dynamicServer) GetDynamic(
 				pbTerms := SetTermData(section.R.GetTerms())
 
 				pbSection := &dynamicv1.SectionData{
-					SectionId:     section.SectionID,
-					Name:          section.Name,
-					Order:         section.Order,
-					TypeSection:   section.R.GetTypeOfSection().Name,
-					TypePosition:  section.R.GetTypeOfPosition().Name,
-					TypeAnimation: section.R.GetTypeOfAnimation().Name,
-					FrameColor:    section.R.GetFrameColor().Name,
-					Text:          section.Text,
-					TextColor:     section.R.GetTextColor().Name,
-					TextSize:      section.TextSize,
-					Font:          section.R.GetTypeOfFont().Name,
-					ImageUrl:      section.ImageURL,
-					Terms:         pbTerms,
+					SectionId:       section.ID,
+					Name:            section.Name,
+					Order:           section.Order,
+					TypeSectionId:   section.TypeSectionID,
+					TypeSection:     section.R.GetTypeSection().Value,
+					TypePositionId:  section.TypePositionID,
+					TypePosition:    section.R.GetTypePosition().Value,
+					TypeAnimationId: section.TypeAnimationID,
+					TypeAnimation:   section.R.GetTypeAnimation().Value,
+					FrameColorId:    section.FrameColorID,
+					FrameColor:      section.R.GetFrameColor().Value,
+					Text:            section.Text,
+					TextColorId:     section.TextColorID,
+					TextColor:       section.R.GetTextColor().Value,
+					TextSizeId:      section.TextSizeID,
+					TextSize:        section.R.GetTextSize().Value,
+					TypeFontId:      section.TypeFontID,
+					TypeFont:        section.R.GetTypeFont().Value,
+					ImageUrl:        section.ImageURL,
+					Terms:           pbTerms,
 				}
 				pbSections = append(pbSections, pbSection)
 			}
 			pbTerms := SetTermData(page.R.GetTerms())
 
 			pbPage := &dynamicv1.PageData{
-				PageId:   page.PageID,
+				PageId:   page.ID,
 				Name:     page.Name,
 				Order:    page.Order,
 				Sections: pbSections,
@@ -101,7 +109,7 @@ func (s *dynamicServer) GetDynamic(
 		pbTerms := SetTermData(chapter.R.GetTerms())
 
 		pbChapter := &dynamicv1.ChapterData{
-			ChapterId: chapter.ChapterID,
+			ChapterId: chapter.ID,
 			Name:      chapter.Name,
 			Order:     chapter.Order,
 			Pages:     pbPages,
@@ -115,7 +123,7 @@ func (s *dynamicServer) GetDynamic(
 
 	pbTags, _ := SetTagData(req.Msg.DynamicId, ctx, s.db)
 	res := connect.NewResponse(&dynamicv1.GetDynamicResponse{
-		DynamicId:   dynamic.DynamicID,
+		DynamicId:   dynamic.ID,
 		Name:        dynamic.Name,
 		Overview:    dynamic.Overview,
 		UserId:      dynamic.UserID,
@@ -136,7 +144,7 @@ func (s *dynamicServer) ListDynamics(
 	ctx context.Context,
 	req *connect.Request[dynamicv1.ListDynamicsRequest],
 ) (*connect.Response[dynamicv1.ListDynamicsResponse], error) {
-	sortCategory, err := FindTypeOfSort(ctx, s.db, req.Msg.SortCategory)
+	sortCategory, err := FindTypeSort(ctx, s.db, req.Msg.SortCategory)
 
 	if err != nil {
 		log.Printf("failed to get sorts: %v", err)
@@ -150,7 +158,7 @@ func (s *dynamicServer) ListDynamics(
 		// LeftOuterJoin(TableNames.Users + " on " + TableNames.Dynamics + "." + DynamicColumns.UserID + " = " + TableNames.Users + "." + UserColumns.UserID),
 		// LeftOuterJoin(TableNames.DynamicsOnTags + " on " + TableNames.Dynamics + "." + DynamicColumns.DynamicID + " = " + TableNames.DynamicsOnTags + "." + DynamicsOnTagColumns.DynamicID),
 		// LeftOuterJoin(TableNames.Tags + " on " + TableNames.DynamicsOnTags + "." + DynamicsOnTagColumns.DynamicID + " = " + TableNames.Tags + "." + TagColumns.TagID),
-		OrderBy(fmt.Sprintf("%s %s", sortCategory.SQL, req.Msg.SortOrder)),
+		OrderBy(fmt.Sprintf("%s %s", sortCategory.Value, req.Msg.SortOrder)),
 	}
 
 	if req.Msg.UserId != "" {
@@ -226,11 +234,11 @@ func (s *dynamicServer) ListDynamics(
 
 	var pbDynamics []*dynamicv1.ListDynamicData
 	for _, dynamic := range dynamics {
-		pbTags, _ := SetTagData(dynamic.DynamicID, ctx, s.db)
+		pbTags, _ := SetTagData(dynamic.ID, ctx, s.db)
 		createdAT := timestamppb.New(dynamic.CreatedAt)
 		updatedAT := timestamppb.New(dynamic.UpdatedAt)
 		pbDynamic := &dynamicv1.ListDynamicData{
-			DynamicId:   dynamic.DynamicID,
+			DynamicId:   dynamic.ID,
 			Name:        dynamic.Name,
 			Overview:    dynamic.Overview,
 			PenName:     dynamic.R.GetUser().PenName,
@@ -277,7 +285,7 @@ func (s *dynamicServer) UpdateContentsOrder(
 			pageOrder := int32(j + 1)
 
 			_, err = (&Page{
-				PageID:    page.PageId,
+				ID:        page.PageId,
 				ChapterID: chapter.ChapterId,
 				Order:     pageOrder,
 			}).Update(ctx, tx, pageUpdateColumns)
@@ -287,8 +295,8 @@ func (s *dynamicServer) UpdateContentsOrder(
 		}
 		chapterOrder := int32(i + 1)
 		_, err = (&Chapter{
-			ChapterID: chapter.ChapterId,
-			Order:     chapterOrder,
+			ID:    chapter.ChapterId,
+			Order: chapterOrder,
 		}).Update(ctx, tx, chapterUpdateColumns)
 		if err != nil {
 			return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("failed to update chapter: %w", err))

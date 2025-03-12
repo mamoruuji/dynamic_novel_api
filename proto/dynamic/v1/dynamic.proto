@@ -51,16 +51,23 @@ message SectionData {
   int32 section_id = 1;
   string name = 2;
   int32 order = 3;
-  string type_section = 4;
-  string type_position = 5;
-  string type_animation = 6;
-  string frame_color = 7;
-  string text = 8;
-  string text_color = 9;
-  int32 text_size = 10;
-  string font = 11;
-  string image_url = 12;
-  repeated TermData terms = 13;
+  int32 type_section_id = 4;
+  string type_section = 5;
+  int32 type_position_id = 6;
+  string type_position = 7;
+  int32 type_animation_id = 8;
+  string type_animation = 9;
+  int32 frame_color_id = 10;
+  string frame_color = 11;
+  string text = 12;
+  int32 text_color_id = 13;
+  string text_color = 14;
+  int32 text_size_id = 15;
+  string text_size = 16;
+  int32 type_font_id = 17;
+  string type_font = 18;
+  string image_url = 19;
+  repeated TermData terms = 20;
 }
 
 message TermData {

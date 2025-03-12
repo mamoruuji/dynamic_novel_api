@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+package proto.dynamic.v1;
+
+option go_package = "github.com/mamoruuji/dynamic_novel_api/gen/proto/dynamic/v1;dynamicv1";
+
+message TypeMaster {
+  int32 id = 1;
+  string name = 2;
+  string value = 3;
+}
+
+message ListSectionMastersRequest {}
+
+message ListSectionMastersResponse {
+  repeated TypeMaster section_type_master = 1;
+  repeated TypeMaster position_type_master = 2;
+  repeated TypeMaster color_type_master = 3;
+  repeated TypeMaster font_type_master = 4;
+  repeated TypeMaster image_type_master = 5;
+  repeated TypeMaster animation_type_master = 6;
+  repeated TypeMaster size_type_master = 7;
+}
+
+message ListSortMasterRequest {}
+
+message ListSortMasterResponse {
+  repeated TypeMaster sort_master = 1;
+}
+
+
+service MasterService {
+  rpc ListSectionMasters(ListSectionMastersRequest) returns (ListSectionMastersResponse) {}
+  rpc ListSortMaster(ListSortMasterRequest) returns (ListSortMasterResponse) {}
+}

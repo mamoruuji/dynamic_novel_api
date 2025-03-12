@@ -32,9 +32,9 @@ func (s *imageServer) ListUserImages(
 ) (*connect.Response[dynamicv1.ListUserImagesResponse], error) {
 	modifiers := []QueryMod{
 		Load(FolderRels.Images),
-		Load(Rels(FolderRels.Images, ImageRels.TypeOfImage)),
+		Load(Rels(FolderRels.Images, ImageRels.TypeImage)),
 		FolderWhere.UserID.EQ(req.Msg.UserId),
-		OrderBy(FolderColumns.FolderID),
+		OrderBy(FolderColumns.ID),
 	}
 	rootFolders, err := Folders(modifiers...).All(ctx, s.db)
 
@@ -55,10 +55,10 @@ func (s *imageServer) ListUserImages(
 	// }
 
 	modifiers = []QueryMod{
-		Load(ImageRels.TypeOfImage),
+		Load(ImageRels.TypeImage),
 		ImageWhere.UserID.EQ(req.Msg.UserId),
 		ImageWhere.FolderID.IsNull(),
-		OrderBy(ImageColumns.ImageID),
+		OrderBy(ImageColumns.ID),
 	}
 	rootImages, err := Images(modifiers...).All(ctx, s.db)
 
@@ -124,7 +124,7 @@ func convertFolder(f *Folder) *dynamicv1.FolderData {
 	}
 
 	return &dynamicv1.FolderData{
-		FolderId: f.FolderID,
+		FolderId: f.ID,
 		Name:     f.Name,
 		UserId:   f.UserID,
 		ParentId: f.ParentID.Int32,

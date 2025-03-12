@@ -96,7 +96,7 @@ func (s *pageServer) AddPage(
 	}
 
 	res := connect.NewResponse(&dynamicv1.AddPageResponse{
-		PageId:      page.PageID,
+		PageId:      page.ID,
 		Name:        page.Name,
 		Order:       page.Order,
 		CreatedTime: page.CreatedAt.Format(time.RFC3339),
@@ -192,7 +192,7 @@ func (s *pageServer) UpdatePageName(
 	}
 
 	res := connect.NewResponse(&dynamicv1.UpdatePageNameResponse{
-		PageId:      page.PageID,
+		PageId:      page.ID,
 		UpdatedTime: page.UpdatedAt.Format(time.RFC3339),
 	})
 

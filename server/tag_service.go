@@ -39,7 +39,7 @@ func (s *tagServer) ListTags(
 	var pbTags []*dynamicv1.TagData
 	for _, tag := range tags {
 		pbTag := &dynamicv1.TagData{
-			TagId: tag.TagID,
+			TagId: tag.ID,
 			Name:  tag.Name,
 		}
 		pbTags = append(pbTags, pbTag)
@@ -92,12 +92,12 @@ func (s *tagServer) SetDynamicOnTag(
 			log.Fatalf("failed to fetch inserted tag: %v", err)
 			return nil, err
 		} else {
-			tag.TagID = upsertedTag.TagID
+			tag.ID = upsertedTag.ID
 		}
 
 		dynamicsOnTag := &DynamicsOnTag{
 			DynamicID: req.Msg.DynamicId,
-			TagID:     tag.TagID,
+			TagID:     tag.ID,
 		}
 		if err = dynamicsOnTag.Insert(ctx, tx, insertColumns); err != nil {
 			log.Printf("failed to set dynamic-tag association: %v", err)

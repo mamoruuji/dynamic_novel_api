@@ -96,7 +96,7 @@ func (s *chapterServer) AddChapter(
 	}
 
 	res := connect.NewResponse(&dynamicv1.AddChapterResponse{
-		ChapterId:   chapter.ChapterID,
+		ChapterId:   chapter.ID,
 		Name:        chapter.Name,
 		Order:       chapter.Order,
 		CreatedTime: chapter.CreatedAt.Format(time.RFC3339),
@@ -148,7 +148,7 @@ func (s *chapterServer) DeleteChapter(
 	if pages != nil {
 		var modifiers []QueryMod
 		for _, page := range pages {
-			modifiers = append(modifiers, SectionWhere.PageID.EQ(page.PageID))
+			modifiers = append(modifiers, SectionWhere.PageID.EQ(page.ID))
 		}
 		sections, err = Sections(modifiers...).All(ctx, tx)
 		if err != nil {
@@ -214,7 +214,7 @@ func (s *chapterServer) UpdateChapterName(
 	}
 
 	res := connect.NewResponse(&dynamicv1.UpdateChapterNameResponse{
-		ChapterId:   chapter.ChapterID,
+		ChapterId:   chapter.ID,
 		UpdatedTime: chapter.UpdatedAt.Format(time.RFC3339),
 	})
 

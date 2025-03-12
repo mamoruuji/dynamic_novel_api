@@ -143,7 +143,11 @@ spew.Dump(hoge)
 ```
 
 ```
-rm -rf db && sqlboiler psql && rm -rf gen && buf generate
+sqlboiler --wipe psql
+ && cp db/extensions/type_extensions.go db/models/
+ && cp db/interfaces/model_interface.go db/models/
+ && rm -rf gen && buf generate
+
 ```
 
 ## テスト用モック作成
@@ -156,3 +160,6 @@ mockgen
 
 go clean -i
 
+
+総ステップ数（自動生成ファイルなどは除外）
+git ls-files | grep -vE '^(mocks|gen|doc|db)/|go.mod|go.sum' | xargs wc -l

@@ -31,7 +31,7 @@ func (s *userServer) GetUser(
 	req *connect.Request[dynamicv1.GetUserRequest],
 ) (*connect.Response[dynamicv1.GetUserResponse], error) {
 	modifiers := []QueryMod{
-		UserWhere.UserID.EQ(req.Msg.UserId),
+		UserWhere.ID.EQ(req.Msg.UserId),
 	}
 
 	user, err := Users(modifiers...).One(ctx, s.db)
@@ -42,7 +42,7 @@ func (s *userServer) GetUser(
 	}
 
 	res := connect.NewResponse(&dynamicv1.GetUserResponse{
-		UserId:   user.UserID,
+		UserId:   user.ID,
 		Name:     user.Name,
 		Email:    user.Email,
 		PenName:  user.PenName,

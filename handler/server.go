@@ -10,20 +10,20 @@ import (
 func Server() http.Handler {
 	mux := http.NewServeMux()
 
-	path, handler := dynamicv1connect.NewDynamicServiceHandler(NewDynamicServer())
-	mux.Handle(path, handler)
-	path, handler = dynamicv1connect.NewImageServiceHandler(NewImageServer())
-	mux.Handle(path, handler)
-	path, handler = dynamicv1connect.NewChapterServiceHandler(NewChapterServer())
-	mux.Handle(path, handler)
-	path, handler = dynamicv1connect.NewPageServiceHandler(NewPageServer())
-	mux.Handle(path, handler)
-	path, handler = dynamicv1connect.NewSortServiceHandler(NewSortServer())
-	mux.Handle(path, handler)
-	path, handler = dynamicv1connect.NewTagServiceHandler(NewTagServer())
-	mux.Handle(path, handler)
-	path, handler = dynamicv1connect.NewUserServiceHandler(NewUserServer())
-	mux.Handle(path, handler)
+	services := []func() (string, http.Handler){
+		func() (string, http.Handler) { return dynamicv1connect.NewDynamicServiceHandler(NewDynamicServer()) },
+		func() (string, http.Handler) { return dynamicv1connect.NewImageServiceHandler(NewImageServer()) },
+		func() (string, http.Handler) { return dynamicv1connect.NewChapterServiceHandler(NewChapterServer()) },
+		func() (string, http.Handler) { return dynamicv1connect.NewPageServiceHandler(NewPageServer()) },
+		func() (string, http.Handler) { return dynamicv1connect.NewTagServiceHandler(NewTagServer()) },
+		func() (string, http.Handler) { return dynamicv1connect.NewUserServiceHandler(NewUserServer()) },
+		func() (string, http.Handler) { return dynamicv1connect.NewMasterServiceHandler(NewMasterServer()) },
+	}
+
+	for _, service := range services {
+		path, handler := service()
+		mux.Handle(path, handler)
+	}
 
 	return mux
 }

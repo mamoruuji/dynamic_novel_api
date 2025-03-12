@@ -36,10 +36,10 @@ func SetImageData(image *Image) *dynamicv1.ImageData {
 	if image != nil {
 		imagePath := image.Path + image.Name
 		pbImage = &dynamicv1.ImageData{
-			ImageId:   image.ImageID,
+			ImageId:   image.ID,
 			Name:      image.Name,
 			ImagePath: imagePath,
-			Type:      image.R.GetTypeOfImage().Name,
+			Type:      image.R.GetTypeImage().Value,
 		}
 	}
 	return pbImage
@@ -58,7 +58,7 @@ func SetTermData(terms []*Term) []*dynamicv1.TermData {
 	var pbTerms []*dynamicv1.TermData
 	for _, term := range terms {
 		pbTerm := &dynamicv1.TermData{
-			TermId:   term.TermID,
+			TermId:   term.ID,
 			Name:     term.Name,
 			Text:     term.Text,
 			Order:    term.Order,
